@@ -1,0 +1,11 @@
+outPrefix       ecoli
+compression     0.20
+crossover       0.90
+mutation        0.25
+generations     1000
+tournament      5
+elitism         0.10
+chromesome      10
+maxDistance     5
+runs            5
+source          ecoli.txt

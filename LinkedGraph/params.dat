@@ -1,0 +1,10 @@
+outPrefix angelo_is_cool
+compression 0.25
+generations : 500
+tournament : 3
+crossover	0.90
+mutation 0.10
+elitism 0.10
+chromesome 10
+maxDistance = 10
+source ecoli.txt
