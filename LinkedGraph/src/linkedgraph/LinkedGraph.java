@@ -209,10 +209,10 @@ public class LinkedGraph implements Graph {
 		int linksTo = this.NODES[aTo].getLinks();
 		int mergedFrom = this.NODES[aFrom].getMergeCount();
 		int mergedTo = this.NODES[aTo].getMergeCount();
-		System.out.println("linksFrom: " + linksFrom);
-		System.out.println("linksTo: " + linksTo);
-		System.out.println("mergedFrom: " + mergedFrom);
-		System.out.println("mergedTo: " + mergedTo);
+//		System.out.println("linksFrom: " + linksFrom);
+//		System.out.println("linksTo: " + linksTo);
+//		System.out.println("mergedFrom: " + mergedFrom);
+//		System.out.println("mergedTo: " + mergedTo);
 		int inheritedLinks = linksFrom + linksTo + mergedFrom + mergedTo;
 
 		// Get the exclusive-OR by removing elements if they exist in both
@@ -236,7 +236,7 @@ public class LinkedGraph implements Graph {
 			}
 			rawLinks = fakes.size() - 2;
 		}
-		System.out.println("rawLinks: " + rawLinks);
+//		System.out.println("rawLinks: " + rawLinks);
 		return rawLinks + inheritedLinks;
 	}
 
