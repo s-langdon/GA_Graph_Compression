@@ -30,7 +30,7 @@ public class GATests extends Thread {
 	}
 
 	public static void main(String... args) {
-		GAImplementation test = new GAImplementation(System.nanoTime(),"figeys16.dat");
-		test.run();
+		/*GAImplementation test = new GAImplementation(System.nanoTime(),"figeys16.dat");
+		test.run();*/
 	}
 }

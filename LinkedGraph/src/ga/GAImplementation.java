@@ -758,6 +758,13 @@ public class GAImplementation {
 			sum += fakeLinks;
 		}
 		System.out.println("Should be " + sum + " fitness");
-		System.out.println(graph.toString());
+		//System.out.println(graph.toString());
+		PrintChromesome(graph, "");
+	}
+	public static void PrintChromesome(LinkedGraph g, String out){
+		g.print();
+//		FileWriter fw = new FileWriter(out);
+//		BufferedWriter bw = new BufferedWriter(fw);
+//		
 	}
 }
