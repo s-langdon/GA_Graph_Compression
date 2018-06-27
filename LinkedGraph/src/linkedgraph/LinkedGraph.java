@@ -38,6 +38,10 @@ public class LinkedGraph implements Graph {
 	 */
 	private ArrayList<ArrayList<Integer>> MATRIX;
 	/**
+	 * The list of all the edges in the graph.
+	 */
+	private ArrayList<ArrayList<Integer>> ORIGINAL_MATRIX;
+	/**
 	 * The current size of the graph, after all the merges.
 	 */
 	private int SIZE;
@@ -56,12 +60,14 @@ public class LinkedGraph implements Graph {
 		this.SIZE = size;
 		this.MAX_SIZE = size;
 		this.MATRIX = new ArrayList<ArrayList<Integer>>(size);
+		this.ORIGINAL_MATRIX = new ArrayList<ArrayList<Integer>>(size);
 		this.NODES = new Node[size];
 		for (int i = 0; i < this.NODES.length; i++) {
 			// populate nodes with default references
 			this.NODES[i] = new Node(i);
 			// populate adjacency list with empty lists
 			this.MATRIX.add(new ArrayList<Integer>());
+			this.ORIGINAL_MATRIX.add(new ArrayList<Integer>());
 		}
 	}
 
@@ -90,9 +96,11 @@ public class LinkedGraph implements Graph {
 		int aTo = this.NODES[to].getId();
 		if (!this.MATRIX.get(aFrom).contains(aTo)) {
 			this.MATRIX.get(aFrom).add(aTo);
+			this.ORIGINAL_MATRIX.get(aFrom).add(aTo);
 		}
 		if (!this.MATRIX.get(aTo).contains(aFrom)) {
 			this.MATRIX.get(aTo).add(aFrom);
+			this.ORIGINAL_MATRIX.get(aTo).add(aFrom);
 		}
 	}
 
@@ -107,6 +115,7 @@ public class LinkedGraph implements Graph {
 		// populate the adjacency matrix/list
 		for (int i = 0; i < other.MAX_SIZE; i++) {
 			other.MATRIX.set(i, new ArrayList<Integer>(m.get(i)));
+			other.ORIGINAL_MATRIX.set(i, new ArrayList<Integer>(m.get(i)));
 		}
 		return other;
 	}
@@ -147,6 +156,10 @@ public class LinkedGraph implements Graph {
 		return other;
 	}
 
+	public Node get(int index) {
+		return this.NODES[this.NODES[index].getId()];
+	}
+
 	/*
     From here on, the javadocs will be inherited from the Graph class that this
     code implements .
@@ -159,7 +172,8 @@ public class LinkedGraph implements Graph {
 			return;
 		}
 		this.NODES[aTo].setLinks(this.fakeLinks(aFrom, aTo));
-		this.NODES[aTo].wasMerged();
+		this.NODES[aTo].absorb(aFrom);
+		this.NODES[aTo].absorb(this.NODES[aFrom].getMergeNodes());
 		this.NODES[aFrom].setReference(NODES[aTo]);
 		ArrayList<Integer> master = new ArrayList<>(this.MATRIX.get(aTo));
 		ArrayList<Integer> slave = new ArrayList<>(this.MATRIX.get(aFrom));
@@ -199,7 +213,6 @@ public class LinkedGraph implements Graph {
 	public int fakeLinks(int from, int to) {
 		int aFrom = this.NODES[from].getId();
 		int aTo = this.NODES[to].getId();
-		//System.out.println("aFrom " + aFrom + " aTo "+aTo);
 		if (aFrom == aTo) {
 			return -1;
 		}
@@ -207,15 +220,21 @@ public class LinkedGraph implements Graph {
 		// links from previous merges
 		int linksFrom = this.NODES[aFrom].getLinks();
 		int linksTo = this.NODES[aTo].getLinks();
-		int mergedFrom = this.NODES[aFrom].getMergeCount();
-		int mergedTo = this.NODES[aTo].getMergeCount();
-//		System.out.println("linksFrom: " + linksFrom);
-//		System.out.println("linksTo: " + linksTo);
-//		System.out.println("mergedFrom: " + mergedFrom);
-//		System.out.println("mergedTo: " + mergedTo);
-		int inheritedLinks = linksFrom + linksTo + mergedFrom + mergedTo;
+		int mergedCount = 0;
+		List<Integer> mergedFrom = this.NODES[aFrom].getMergeNodes();
+		for (int node : mergedFrom) {
+			if (!this.ORIGINAL_MATRIX.get(aTo).contains(node)) {
+				mergedCount++;
+			}
+		}
+		List<Integer> mergedTo = this.NODES[aTo].getMergeNodes();
+		for (int node : mergedTo) {
+			if (!this.ORIGINAL_MATRIX.get(aFrom).contains(node)) {
+				mergedCount++;
+			}
+		}
+		int inheritedLinks = linksFrom + linksTo + mergedCount;
 
-		// Get the exclusive-OR by removing elements if they exist in both
 		Set<Integer> fakes = new HashSet<Integer>(this.MATRIX.get(aFrom));
 		fakes.remove(aFrom);
 		Set<Integer> fakeCompares = new HashSet<Integer>(this.MATRIX.get(aTo));
@@ -236,7 +255,6 @@ public class LinkedGraph implements Graph {
 			}
 			rawLinks = fakes.size() - 2;
 		}
-//		System.out.println("rawLinks: " + rawLinks);
 		return rawLinks + inheritedLinks;
 	}
 

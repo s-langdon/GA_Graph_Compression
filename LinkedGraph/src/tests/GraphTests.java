@@ -30,7 +30,7 @@ public class GraphTests {
 	new GA(System.nanotime(), args[0])
 	 */
 	public static void main(String... args) {
-		/*
+		
 		System.out.println("Working Directory = "
 				+ System.getProperty("user.dir"));
 		LinkedGraph g = LinkedGraph.load("./test1.txt");
@@ -91,7 +91,7 @@ public class GraphTests {
 		System.out.println("Merge(4,5):");
 		h.merge(4, 5);
 		System.out.println(h);
-		 */
+		 
 		LinkedGraph k1 = LinkedGraph.load("./ecoli.txt");
 		LinkedGraph k2 = k1.deepCopy();
 		LinkedGraph test = k1.deepCopy();
@@ -119,20 +119,20 @@ public class GraphTests {
 		//GAImplementation.ViewChromesome(test, chromesome4);
 
 		System.out.println("new fake links test");
-		System.out.println("177 to 178~~~~~~~~~~~");
-		System.out.println("~~~~~~~177 to 178: " + k1.fakeLinks(177, 178));
+		System.out.println("[177 to 178]");
+		System.out.println("fakelinks: " + k1.fakeLinks(177, 178));
 		k1.merge(177, 178);
-		System.out.println("179 to 178~~~~~~~~~~~");
-		System.out.println("~~~~~~~179 to 178: " + k1.fakeLinks(179, 178));
+		System.out.println("[179 to 178]");
+		System.out.println("fakelinks: " + k1.fakeLinks(179, 178));
 		k1.merge(179, 178);
-		System.out.println("175 to 177(178)~~~~~~~~~~~");
-		System.out.println("~~~~~~~175 to 177: " + k1.fakeLinks(175, 177));
+		System.out.println("[175 to 177(178)]");
+		System.out.println("fakelinks: " + k1.fakeLinks(175, 177));
 		k1.merge(175, 177);
-		System.out.println("176 to 178~~~~~~~~~~~");
-		System.out.println("~~~~~~~176 to 178: " + k1.fakeLinks(176, 178));
+		System.out.println("[176 to 178]");
+		System.out.println("fakelinks: " + k1.fakeLinks(176, 178));
 		k1.merge(176, 178);
-		System.out.println("178 to 174~~~~~~~~~~~");
-		System.out.println("~~~~~~~178 to 174: " + k1.fakeLinks(178, 174));
+		System.out.println("[178 to 174]");
+		System.out.println("fakelinks: " + k1.fakeLinks(178, 174));
 		k1.merge(178, 174);
 		System.out.println("~~~~~~~~~~~");
 

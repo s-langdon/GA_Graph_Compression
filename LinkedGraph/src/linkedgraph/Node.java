@@ -13,7 +13,7 @@ public class Node {
 	private Node REFERENCE;
 	private int ID;
 	private int CUMULATIVE_FAKE_LINKS;
-	private int MERGED_NODE_COUNT;
+	private List<Integer> MERGED_NODES;
 
 	/**
 	 * @param id the index of value of the node
@@ -22,7 +22,7 @@ public class Node {
 		this.ID = id;
 		this.REFERENCE = this;
 		this.CUMULATIVE_FAKE_LINKS = 0;
-		this.MERGED_NODE_COUNT = 0;
+		this.MERGED_NODES = new LinkedList<>();
 	}
 
 	/**
@@ -42,12 +42,16 @@ public class Node {
 		return this.CUMULATIVE_FAKE_LINKS;
 	}
 
-	public void wasMerged() {
-		this.MERGED_NODE_COUNT++;
+	public void absorb(int node) {
+		this.MERGED_NODES.add(node);
 	}
 
-	public int getMergeCount() {
-		return this.MERGED_NODE_COUNT;
+	public void absorb(List<Integer> nodes) {
+		this.MERGED_NODES.addAll(nodes);
+	}
+
+	public List<Integer> getMergeNodes() {
+		return new LinkedList<>(this.MERGED_NODES);
 	}
 
 	/**
