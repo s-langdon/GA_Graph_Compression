@@ -1,5 +1,6 @@
 package ga;
 
+import display.GraphDisplay;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -746,6 +747,10 @@ public class GAImplementation {
 		chromesome = chromesome.replaceAll("\\[", "");
 		String[] chromesomes = chromesome.split("\\),\\(");
 		int sum = 0;
+
+		long id = System.currentTimeMillis();
+		PrintChromesome(graph, OUT_DIRECTORY + "before_" + id);
+
 		for (String c : chromesomes) {
 			c = c.replaceAll("\\(", "");
 			c = c.replaceAll("\\)", "");
@@ -757,14 +762,15 @@ public class GAImplementation {
 			graph.merge(from, to);
 			sum += fakeLinks;
 		}
+
 		System.out.println("Should be " + sum + " fitness");
-		//System.out.println(graph.toString());
-		PrintChromesome(graph, "");
+		PrintChromesome(graph, OUT_DIRECTORY + "after_" + id);
+
 	}
-	public static void PrintChromesome(LinkedGraph g, String out){
+
+	public static void PrintChromesome(LinkedGraph g, String filename) {
 		g.print();
-//		FileWriter fw = new FileWriter(out);
-//		BufferedWriter bw = new BufferedWriter(fw);
+		GraphDisplay.displayLinkedGraph(g, filename);
 //		
 	}
 }

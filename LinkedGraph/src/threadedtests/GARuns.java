@@ -27,6 +27,7 @@ public class GARuns {
 	public static void main(String... args) {
 
 		long SEED = System.nanoTime();
+		SEED = 107651916186943L;
 		GAThread[] threads = new GAThread[MAX_THREADS];
 		ArrayList<GAImplementation> threadData = new ArrayList<>();
 		for (int i = FIRST_TEST; i <= LAST_TEST; i++) {
