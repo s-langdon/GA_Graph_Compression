@@ -10,24 +10,27 @@ import org.graphstream.graph.implementations.SingleGraph;
  */
 public class GraphDisplay {
 
-	public static void displayLinkedGraph(LinkedGraph g, String filename) {
+	public static void displayLinkedGraph(LinkedGraph g) {
 		Graph graph = new SingleGraph("LinkedGraph");
 
 		graph.addAttribute("ui.quality");
 		graph.addAttribute("ui.antialias");
-		graph.addAttribute("ui.stylesheet", 
-			"node {" +
-			"	size: 3px;" +
-			"	fill-color: #777;" +
-			"	z-index: 0;" +
-			"   size-mode:fit;"+
-			"}" +
-			"edge {" +
-			"	shape: line;" +
-			"	fill-color: #222;" +
-			"	arrow-size: 5px, 2px;" +
-			"   size-mode:fit;"+
-			"}"
+		graph.addAttribute("ui.stylesheet",
+				"node {"
+					+ "size: 3px;"
+					+ "fill-color: #777;"
+					+ "z-index: 0;"
+					+ "text-background-mode: rounded-box;"
+					+ "text-padding: 5;"
+					+ "text-background-color: white;"
+				+ "}"
+				+ "edge {"
+					+ "shape: line;"
+					+ "fill-color: #222;"
+					+ "z-index: -1;"
+					+ "arrow-size: 5px, 2px;"
+					+ "size-mode:fit;"
+				+ "}"
 		);
 
 		for (int i = 0; i < g.getSize(); i++) {

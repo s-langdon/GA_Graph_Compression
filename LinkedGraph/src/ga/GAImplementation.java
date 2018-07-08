@@ -747,10 +747,7 @@ public class GAImplementation {
 		chromesome = chromesome.replaceAll("\\[", "");
 		String[] chromesomes = chromesome.split("\\),\\(");
 		int sum = 0;
-
-		long id = System.currentTimeMillis();
-		PrintChromesome(graph, OUT_DIRECTORY + "before_" + id);
-
+		
 		for (String c : chromesomes) {
 			c = c.replaceAll("\\(", "");
 			c = c.replaceAll("\\)", "");
@@ -764,13 +761,13 @@ public class GAImplementation {
 		}
 
 		System.out.println("Should be " + sum + " fitness");
-		PrintChromesome(graph, OUT_DIRECTORY + "after_" + id);
+		PrintChromesome(graph);
 
 	}
 
-	public static void PrintChromesome(LinkedGraph g, String filename) {
+	public static void PrintChromesome(LinkedGraph g) {
 		g.print();
-		GraphDisplay.displayLinkedGraph(g, filename);
+		GraphDisplay.displayLinkedGraph(g);
 //		
 	}
 }
