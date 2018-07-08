@@ -1,8 +1,15 @@
 package display;
 
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import linkedgraph.*;
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.implementations.SingleGraph;
+import org.graphstream.stream.file.FileSinkImages;
+import org.graphstream.stream.file.FileSinkImages.LayoutPolicy;
+import org.graphstream.stream.file.FileSinkImages.OutputType;
+import org.graphstream.stream.file.FileSinkImages.Resolutions;
 
 /**
  *
@@ -55,6 +62,13 @@ public class GraphDisplay {
 				}
 			}
 		}
+//		FileSinkImages pic = new FileSinkImages(OutputType.PNG, Resolutions.VGA);
+//		pic.setLayoutPolicy(LayoutPolicy.COMPUTED_FULLY_AT_NEW_IMAGE);
+//		try {
+//			pic.writeAll(graph, "data/out/out.png");
+//		} catch (Exception ex) {
+//			System.out.println("Error writing to image: " + ex.getMessage());
+//		}
 		graph.display();
 	}
 }
