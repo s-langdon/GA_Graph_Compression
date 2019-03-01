@@ -31,8 +31,14 @@ public class DisplayTests {
         String sample2_3 = "[(1,1),(2,1),(3,1)]"; //0
         String sample2_4 = "[(0,1)]"; // 3
         String sample2_5 = "[(1,1),(2,1),(3,1),(]"; //6
+		
+		String test_0 = "[(0,0)]";
+		String test_1 = "[(0,1)]"; //0
+		String test_2 = "[(0,1),(1,1)]"; // 2
+		String test_3 = "[(0,2)]"; //1
+		String test_4 = "[(0,2),(1,1)]"; // 2
 
-        GAImplementation.ViewChromesome(sample2, sample2_4);
+        GAImplementation.ViewChromesome(test, test_4);
 
     }
 }

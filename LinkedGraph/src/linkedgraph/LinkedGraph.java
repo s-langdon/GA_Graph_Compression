@@ -246,7 +246,6 @@ public class LinkedGraph implements Graph {
         int total = 0;
         for (Node node : this.NODES) {
             total += node.getFakeEdges().size();
-            System.out.println("Node " + node.ID + ": " + node.getFakeEdges());
         }
         return total / 2;
     }

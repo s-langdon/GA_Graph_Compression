@@ -16,7 +16,7 @@ public class GARuns {
 
 	public static final int MAX_THREADS = 6;
 	public static final int FIRST_TEST = 1;
-	public static final int LAST_TEST = 16;
+	public static final int LAST_TEST = 7;
 	public static final String[] TESTS = new String[]{
 		"ecoli?.dat",
 		"yeast?.dat",

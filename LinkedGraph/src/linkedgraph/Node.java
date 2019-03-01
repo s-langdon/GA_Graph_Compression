@@ -14,8 +14,7 @@ public class Node {
 
 	private Node REFERENCE;
 	public final int ID;
-	private int CUMULATIVE_FAKE_LINKS;
-        private Set<Integer> FAKE_EDGES;
+	private Set<Integer> FAKE_EDGES;
 	private Set<Integer> MERGED_NODES;
 
 	/**
@@ -24,7 +23,6 @@ public class Node {
 	public Node(int id) {
 		this.ID = id;
 		this.REFERENCE = this;
-		this.CUMULATIVE_FAKE_LINKS = 0;
 		this.MERGED_NODES = new HashSet<>();
 		this.FAKE_EDGES = new HashSet<>();
 	}
@@ -49,15 +47,15 @@ public class Node {
 	public Set<Integer> getMergeNodes() {
 		return new HashSet<>(this.MERGED_NODES);
 	}
-        
-        public void addFakeEdge(int node){
-            this.FAKE_EDGES.add(node);
-        }
 
-        public void addFakeEdges(Set<Integer> nodes){
-            this.FAKE_EDGES.addAll(nodes);
-        }
-                
+	public void addFakeEdge(int node) {
+		this.FAKE_EDGES.add(node);
+	}
+
+	public void addFakeEdges(Set<Integer> nodes) {
+		this.FAKE_EDGES.addAll(nodes);
+	}
+
 	public Set<Integer> getFakeEdges() {
 		return new HashSet<>(this.FAKE_EDGES);
 	}
