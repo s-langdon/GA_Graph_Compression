@@ -58,7 +58,7 @@ public class GAImplementation {
 	private BufferedWriter OUTPUT;
 
 	private final String DEFAULT_OUTPUT = "";
-	private final float DEFAULT_RATE = Float.MIN_VALUE;
+	private final float DEFAULT_RATE = -Float.MAX_VALUE;
 	private final int DEFAULT_SIZE = Integer.MIN_VALUE;
 
 	private Graph ORIGINAL_GRAPH;
@@ -81,9 +81,6 @@ public class GAImplementation {
 		this.RANDOM = new Random(this.SEED);
 		if (!buildData(IN_DIRECTORY + fileLocation)) {
 			return;
-		}
-		if (this.COMPRESSION_RATE > 0 && this.COMPRESSION_RATE <= 1) {
-			this.CHROMESOME_SIZE = (int) (this.COMPRESSION_RATE * this.GRAPH_SIZE);
 		}
 		// compression suffix
 		this.OUTPUT_FILENAME += "_cmp" + (int) (this.COMPRESSION_RATE * 100);
@@ -117,8 +114,11 @@ public class GAImplementation {
 				this.OUTPUT.write("Source,"
 						+ "Seed,"
 						+ "Graph Size,"
+						+ "Population Size,"
 						+ "Compression Rate,"
+						+ "Chromesome Size,"
 						+ "Elitism Rate,"
+						+ "Elite Size,"
 						+ "Tournament Size,"
 						+ "Mutation Rate,"
 						+ "Crossover Rate,"
@@ -248,11 +248,14 @@ public class GAImplementation {
 						this.OUTPUT.write(this.SOURCE_FILENAME + ","
 								+ this.SEED + ","
 								+ this.GRAPH_SIZE + ","
-								+ this.COMPRESSION_RATE + ","
-								+ this.ELITISM_RATE + ","
+								+ this.POPULATION_SIZE + ","
+								+ String.format("%.5f%%", this.CHROMESOME_SIZE / Double.valueOf(this.GRAPH_SIZE)) + ","
+								+ this.CHROMESOME_SIZE + ","
+								+ String.format("%.5f%%", this.ELITE_COUNT / Double.valueOf(this.GRAPH_SIZE)) + ","
+								+ this.ELITE_COUNT + ","
 								+ this.TOURNAMENT_SIZE + ","
-								+ this.MUTATION_RATE + ","
-								+ this.CROSSOVER_RATE + ","
+								+ String.format("%.5f%%", this.MUTATION_RATE) + ","
+								+ String.format("%.5f%%", this.CROSSOVER_RATE) + ","
 								+ this.DISTANCE_LIMIT + ","
 								+ this.RUN_SPAN + ","
 								+ run + ","
@@ -571,14 +574,23 @@ public class GAImplementation {
 					+ ", use parameter: source");
 			this.VALID = false;
 		}
-		if (this.COMPRESSION_RATE > 1.0 || this.COMPRESSION_RATE < 0.0) {
-			System.out.println("Compression rate invalid"
-					+ ", use parameter: compression [0.0,1.0]");
-			if (this.CHROMESOME_SIZE < 1) {
-				this.VALID = false;
-			}
+		if (this.COMPRESSION_RATE < 1.0 && this.COMPRESSION_RATE > 0.0) {
+			this.CHROMESOME_SIZE = (int) (this.COMPRESSION_RATE * this.GRAPH_SIZE);
 		} else {
-			this.POPULATION_SIZE = (int) (this.COMPRESSION_RATE * this.GRAPH_SIZE);
+			if (this.CHROMESOME_SIZE < 1) {
+				System.out.println("Compression rate invalid"
+						+ ", use parameter: compression [0.0,1.0]");
+				this.VALID = false;
+			} else {
+				System.out.println("Compression rate invalid"
+						+ ", defaulting to parameter: chromesome "
+						+ this.CHROMESOME_SIZE
+				);
+			}
+		}
+		if (this.POPULATION_SIZE < 1) {
+			System.out.println("Population size invalid"
+					+ ", use parameter: population [1,infinity)");
 		}
 		if (this.TOURNAMENT_SIZE < 1) {
 			System.out.println("Tournament size invalid"
@@ -592,13 +604,6 @@ public class GAImplementation {
 			System.out.println("Generation size invalid"
 					+ ", use parameter: generations [1,infinity)");
 			this.VALID = false;
-		}
-		if (this.CHROMESOME_SIZE < 1) {
-			System.out.println("Chromesome size invalid"
-					+ ", use parameter: chromesome [1,infinity)");
-			if (this.COMPRESSION_RATE > 1.0 || this.COMPRESSION_RATE < 0.0) {
-				this.VALID = false;
-			}
 		}
 		if (this.DISTANCE_LIMIT < 1) {
 			System.out.println("Distance limit invalid"
@@ -620,18 +625,27 @@ public class GAImplementation {
 					+ ", use parameter: mutation [0.0,1.0]");
 			this.VALID = false;
 		}
-		if (this.ELITISM_RATE > 1.0 || this.ELITISM_RATE < 0.0) {
-			System.out.println("Elitism rate invalid"
-					+ ", use parameter: elitism [0.0,1.0]");
-			this.VALID = false;
-		} else {
+		if (this.ELITISM_RATE < 1.0 && this.ELITISM_RATE > 0.0) {
+			System.out.println(this.ELITISM_RATE);
 			this.ELITE_COUNT = (int) (this.ELITISM_RATE * this.POPULATION_SIZE);
-			if (this.ELITE_COUNT < 1) {
-				this.ELITE_COUNT = 1;
+			if (this.ELITE_COUNT < 1 || this.ELITE_COUNT >= this.POPULATION_SIZE) {
+				System.out.println("Invalid number of elites: " + this.ELITE_COUNT);
+				this.VALID = false;
 			}
-			if (this.ELITE_COUNT > this.POPULATION_SIZE) {
-				// all of them being elites is dumb.
-				this.ELITE_COUNT = this.POPULATION_SIZE - 1;
+		} else {
+			if (this.ELITE_COUNT < 1) {
+				System.out.println("Elitism rate invalid"
+						+ ", use parameter: elitism [0.0,1.0]");
+				this.VALID = false;
+			} else {
+				System.out.println("Elitism rate invalid"
+						+ ", defaulting to parameter: elites "
+						+ this.ELITE_COUNT
+				);
+				if (this.ELITE_COUNT < 1 || this.ELITE_COUNT >= this.POPULATION_SIZE) {
+					System.out.println("Invalid number of elites: " + this.ELITE_COUNT);
+					this.VALID = false;
+				}
 			}
 		}
 		if (this.RUN_SPAN < 0) {
@@ -674,8 +688,14 @@ public class GAImplementation {
 					case "elitism":
 						this.ELITISM_RATE = Float.parseFloat(data[1].trim());
 						break;
+					case "elites":
+						this.ELITE_COUNT = Integer.parseInt(data[1].trim());
+						break;
 					case "chromesome":
 						this.CHROMESOME_SIZE = Integer.parseInt(data[1].trim());
+						break;
+					case "population":
+						this.POPULATION_SIZE = Integer.parseInt(data[1].trim());
 						break;
 					case "outPrefix":
 						this.OUTPUT_FILENAME = data[1].trim();
@@ -747,7 +767,7 @@ public class GAImplementation {
 		chromesome = chromesome.replaceAll("\\[", "");
 		String[] chromesomes = chromesome.split("\\),\\(");
 		int sum = 0;
-		
+
 		for (String c : chromesomes) {
 			c = c.replaceAll("\\(", "");
 			c = c.replaceAll("\\)", "");
