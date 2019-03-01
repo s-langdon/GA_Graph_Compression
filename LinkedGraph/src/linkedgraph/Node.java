@@ -1,7 +1,9 @@
 package linkedgraph;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.LinkedList;
+import java.util.Set;
 
 /**
  * Node class that holds a reference to it's actual value
@@ -11,9 +13,10 @@ import java.util.LinkedList;
 public class Node {
 
 	private Node REFERENCE;
-	private int ID;
+	public final int ID;
 	private int CUMULATIVE_FAKE_LINKS;
-	private List<Integer> MERGED_NODES;
+        private Set<Integer> FAKE_EDGES;
+	private Set<Integer> MERGED_NODES;
 
 	/**
 	 * @param id the index of value of the node
@@ -22,7 +25,8 @@ public class Node {
 		this.ID = id;
 		this.REFERENCE = this;
 		this.CUMULATIVE_FAKE_LINKS = 0;
-		this.MERGED_NODES = new LinkedList<>();
+		this.MERGED_NODES = new HashSet<>();
+		this.FAKE_EDGES = new HashSet<>();
 	}
 
 	/**
@@ -34,24 +38,28 @@ public class Node {
 		this(other.ID);
 	}
 
-	public void setLinks(int links) {
-		this.CUMULATIVE_FAKE_LINKS = links;
-	}
-
-	public int getLinks() {
-		return this.CUMULATIVE_FAKE_LINKS;
-	}
-
 	public void absorb(int node) {
 		this.MERGED_NODES.add(node);
 	}
 
-	public void absorb(List<Integer> nodes) {
+	public void absorb(Set<Integer> nodes) {
 		this.MERGED_NODES.addAll(nodes);
 	}
 
-	public List<Integer> getMergeNodes() {
-		return new LinkedList<>(this.MERGED_NODES);
+	public Set<Integer> getMergeNodes() {
+		return new HashSet<>(this.MERGED_NODES);
+	}
+        
+        public void addFakeEdge(int node){
+            this.FAKE_EDGES.add(node);
+        }
+
+        public void addFakeEdges(Set<Integer> nodes){
+            this.FAKE_EDGES.addAll(nodes);
+        }
+                
+	public Set<Integer> getFakeEdges() {
+		return new HashSet<>(this.FAKE_EDGES);
 	}
 
 	/**

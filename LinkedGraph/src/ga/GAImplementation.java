@@ -450,12 +450,12 @@ public class GAImplementation {
 	 * @param gene
 	 * @return geneFitness
 	 */
-	public int EvaluateGene(LinkedGraph graph, int[] gene) {
+	public void EvaluateGene(LinkedGraph graph, int[] gene) {
 		int from = gene[0];
 		int to = (gene[0] + gene[1]) % this.GRAPH_SIZE;
-		int fakelinks = graph.fakeLinks(from, to);
+		int distance = graph.distance(from, to);
 		// fakesLinks will return -1 if the two nodes are the same
-		if (fakelinks < 0) {
+		if (distance < 1) {
 			// in that case, update the possible neighbors
 			List<Integer> possibleNeighbors = graph.bfs(from, this.DISTANCE_LIMIT);
 			// try the next neighbor
@@ -463,14 +463,14 @@ public class GAImplementation {
 				to = neighbor;
 				int offset = Math.floorMod(neighbor - from, this.GRAPH_SIZE);
 				gene[1] = offset;
-				fakelinks = graph.fakeLinks(from, to);
+				distance = graph.distance(from, to);
 				// do this until a valid neighbor is found
-				if (fakelinks >= 0) {
+				if (distance > 0) {
 					break;
 				}
 			}
 			// if no valid neighbors could be found, mutate.
-			while (fakelinks < 0) {
+			while (distance < 1) {
 				from = this.RANDOM.nextInt(this.GRAPH_SIZE);
 				possibleNeighbors = graph.bfs(from, this.DISTANCE_LIMIT);
 				if (possibleNeighbors.size() < 1) {
@@ -480,16 +480,15 @@ public class GAImplementation {
 				int randomOffset = Math.floorMod(to - from, this.GRAPH_SIZE);
 				gene[0] = from;
 				gene[1] = randomOffset;
-				fakelinks = graph.fakeLinks(from, to);
+				distance = graph.distance(from, to);
 			}
 		}
-		if (fakelinks < 0) {
+		if (distance < 1) {
 			System.out.println("from: " + from);
 			System.out.println("to: " + to);
-			System.out.println("fakeLinks: " + fakelinks);
+			System.out.println("distance: " + distance);
 		}
 		graph.merge(from, to);
-		return fakelinks;
 	}
 
 	/**
@@ -500,14 +499,15 @@ public class GAImplementation {
 	 * @return
 	 */
 	public int Evaluate(int[][] chromesome) {
-		Graph current = this.ORIGINAL_GRAPH.deepCopy();
+		LinkedGraph current = (LinkedGraph)this.ORIGINAL_GRAPH.deepCopy();
 		// iterate through each gene
 		int fitness = 0;
 		int merged = 0;
 		for (int i = 0; i < chromesome.length; i++) {
-			fitness += this.EvaluateGene((LinkedGraph) current, chromesome[i]);
+			this.EvaluateGene((LinkedGraph) current, chromesome[i]);
 		}
-		return fitness;
+                
+		return current.totalFakeLinks();
 	}
 
 	/**
@@ -774,13 +774,10 @@ public class GAImplementation {
 			String[] gene = c.split(",");
 			int from = Integer.valueOf(gene[0]);
 			int to = (Integer.valueOf(gene[1]) + from) % graph.getSize();
-			int fakeLinks = graph.fakeLinks(from, to);
-			System.out.println("Fake Links [" + from + "," + to + "]: " + fakeLinks);
 			graph.merge(from, to);
-			sum += fakeLinks;
 		}
 
-		System.out.println("Should be " + sum + " fitness");
+		System.out.println("Should be " + graph.totalFakeLinks() + " fitness");
 		PrintChromesome(graph);
 
 	}
