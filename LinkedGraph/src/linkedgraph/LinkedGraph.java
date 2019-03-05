@@ -178,6 +178,11 @@ public class LinkedGraph implements Graph {
         Set<Integer> masterMerges = new HashSet<>(this.NODES[master].getMergeNodes());
         masterMerges.add(master);
 
+        if (!this.ORIGINAL_MATRIX.get(master).contains(slave)) {
+            this.NODES[master].addFakeEdge(slave);
+            this.NODES[slave].addFakeEdge(master);
+        }
+
         this.NODES[slave].setReference(this.NODES[master]);
 
         ArrayList<Integer> masterCurrentNeighbors = new ArrayList<>(this.MATRIX.get(master));
@@ -206,6 +211,7 @@ public class LinkedGraph implements Graph {
                 }
             }
         }
+
         this.NODES[master].absorb(slaveMerges);
 
         Set<Integer> newMaster = new HashSet<Integer>();
@@ -246,6 +252,15 @@ public class LinkedGraph implements Graph {
         int total = 0;
         for (Node node : this.NODES) {
             total += node.getFakeEdges().size();
+        }
+        return total / 2;
+    }
+
+    public int printFakeLinks() {
+        int total = 0;
+        for (Node node : this.NODES) {
+            total += node.getFakeEdges().size();
+            System.out.println(node.ID + ": " + node.getFakeEdges());
         }
         return total / 2;
     }
@@ -327,6 +342,9 @@ public class LinkedGraph implements Graph {
                 String vertice = "{(" + i;
                 if (this.SHOW_MEMORY) {
                     vertice += "," + Integer.toHexString(this.NODES[i].hashCode());
+                }
+                if (this.NODES[i].getMergeNodes().size() > 0) {
+                    vertice += ": " + this.NODES[i].getMergeNodes();
                 }
                 vertice += ") -> " + String.join(",", neighbors) + "}";
                 System.out.println(vertice);
