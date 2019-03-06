@@ -71,6 +71,29 @@ public class GraphTests {
             {"test/test4.txt", "5", "[(0,1),(2,1)]"},
             {"test/test4.txt", "2", "[(4,2)]"},
             {"test/test4.txt", "5", "[(0,6)]"},
+            /* C, 4 nodes 3 edges */
+            {"test/test5.txt", "1", "[(0,1)]"},
+            {"test/test5.txt", "3", "[(0,1),(1,1)]"},
+            {"test/test5.txt", "3", "[(0,1),(1,1),(2,1)]"},
+            // edges first
+            {"test/test5.txt", "3", "[(0,1),(2,1)]"},
+            {"test/test5.txt", "3", "[(0,1),(2,1),(1,1)]"},
+            // root first
+            {"test/test5.txt", "2", "[(1,1)]"},
+            {"test/test5.txt", "3", "[(1,1),(0,1)]"},
+            {"test/test5.txt", "3", "[(1,1),(0,1),(2,1)]"},
+            /* 6 node circle */
+            {"test/test6.txt", "5", "[(0,3)]"},
+            {"test/test6.txt", "8", "[(0,3),(2,3)]"},
+            {"test/test6.txt", "9", "[(0,3),(2,3),(0,1)]"},
+            {"test/test6.txt", "9", "[(0,3),(2,3),(0,1),(1,1)]"},
+            // test that 5 (which contains 0,1,2,3) merged with 4 results in the same
+            {"test/test6.txt", "9", "[(0,3),(2,3),(0,1),(1,1),(0,1)]"},
+            {"test/test6.txt", "9", "[(0,3),(2,3),(0,1),(1,1),(1,1)]"},
+            {"test/test6.txt", "9", "[(0,3),(2,3),(0,1),(1,1),(2,1)]"},
+            {"test/test6.txt", "9", "[(0,3),(2,3),(0,1),(1,1),(3,1)]"},
+            {"test/test6.txt", "9", "[(0,3),(2,3),(0,1),(1,1),(4,1)]"},
+            {"test/test6.txt", "9", "[(0,3),(2,3),(0,1),(1,1),(5,1)]"}
         };
         for (int i = 0; i < tests.length; i++) {
             LinkedGraph graph = LinkedGraph.load(tests[i][0]);
