@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.List;
 // could probably replace all instances of arraylist with linked list
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Set;
@@ -363,11 +364,14 @@ public class LinkedGraph implements Graph {
                 for (Integer iNeighbor : this.MATRIX.get(i)) {
                     neighbors.add(String.valueOf(iNeighbor));
                 }
-                String vertice = "{(" + i;
+                ArrayList<Integer> cluster = new ArrayList<>(this.NODES[i].getMergeNodes());
+                cluster.add(i);
+                Collections.sort(cluster);
+                String vertice = "{" + cluster;
                 if (this.SHOW_MEMORY) {
-                    vertice += "," + Integer.toHexString(this.NODES[i].hashCode());
+                    vertice += ":" + Integer.toHexString(this.NODES[i].hashCode());
                 }
-                vertice += ") -> " + String.join(",", neighbors) + "}";
+                vertice += " -> " + String.join(",", neighbors) + "}";
                 returnValue.add(vertice);
             }
         }
@@ -418,6 +422,11 @@ public class LinkedGraph implements Graph {
     public int distance(int from, int to) {
         int aFrom = this.NODES[from].getId();
         int aTo = this.NODES[to].getId();
+
+        if (aFrom == aTo) {
+            return 0;
+        }
+
         int shortest = Integer.MAX_VALUE;
         // keeping a track of previously visited to avoid infinite loops
         ArrayList<Integer> explored = new ArrayList<Integer>();

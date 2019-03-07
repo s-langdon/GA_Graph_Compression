@@ -12,6 +12,8 @@ import java.util.Random;
 import graph.*;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.PriorityQueue;
 import linkedgraph.*;
 
@@ -69,6 +71,7 @@ public class GAImplementation {
     private static final String OUT_DIRECTORY = "data/out/";
 
     private List<List<Integer>> ORIGINAL_NEIGHBORHOODS;
+    private Map<String, Integer> CACHED_FITNESSES;
 
     /**
      * builds GA based on fileLocation file
@@ -147,6 +150,7 @@ public class GAImplementation {
                 System.out.println("Unable to write to file: " + e.getMessage());
             }
             this.ORIGINAL_NEIGHBORHOODS = new LinkedList<>();
+            this.CACHED_FITNESSES = new HashMap<>();
             for (int i = 0; i < this.GRAPH_SIZE; i++) {
                 this.ORIGINAL_NEIGHBORHOODS.add(new LinkedList<Integer>());
             }
@@ -501,13 +505,18 @@ public class GAImplementation {
     public int Evaluate(int[][] chromesome) {
         LinkedGraph current = (LinkedGraph) this.ORIGINAL_GRAPH.deepCopy();
         // iterate through each gene
-        int fitness = 0;
-        int merged = 0;
         for (int i = 0; i < chromesome.length; i++) {
             this.EvaluateGene((LinkedGraph) current, chromesome[i]);
         }
 
-        return current.totalFakeLinks();
+        String graphRepresentation = current.toString();
+        if (this.CACHED_FITNESSES.containsKey(graphRepresentation)) {
+            return this.CACHED_FITNESSES.get(graphRepresentation);
+        } else {
+            int fitness = current.totalFakeLinks();
+            this.CACHED_FITNESSES.put(graphRepresentation, fitness);
+            return fitness;
+        }
     }
 
     /**

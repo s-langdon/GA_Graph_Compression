@@ -30,7 +30,7 @@ public class GraphTests {
 	new GA(System.nanotime(), args[0])
      */
     public static void main(String... args) {
-        String[][] tests = new String[][]{
+        String[][] fakeEdgeTests = new String[][]{
             /* 2 edges, 3 nodes */
             // edge to root
             {"test/test1.txt", "1", "[(0,1)]"},
@@ -88,17 +88,17 @@ public class GraphTests {
             {"test/test6.txt", "9", "[(0,3),(2,3),(0,1)]"},
             {"test/test6.txt", "9", "[(0,3),(2,3),(0,1),(1,1)]"},
             // test that 5 (which contains 0,1,2,3) merged with 4 results in the same
-            {"test/test6.txt", "9", "[(0,3),(2,3),(0,1),(1,1),(0,1)]"},
-            {"test/test6.txt", "9", "[(0,3),(2,3),(0,1),(1,1),(1,1)]"},
-            {"test/test6.txt", "9", "[(0,3),(2,3),(0,1),(1,1),(2,1)]"},
+            {"test/test6.txt", "9", "[(0,3),(2,3),(0,1),(1,1),(0,4)]"},
+            {"test/test6.txt", "9", "[(0,3),(2,3),(0,1),(1,1),(1,3)]"},
+            {"test/test6.txt", "9", "[(0,3),(2,3),(0,1),(1,1),(2,2)]"},
             {"test/test6.txt", "9", "[(0,3),(2,3),(0,1),(1,1),(3,1)]"},
             {"test/test6.txt", "9", "[(0,3),(2,3),(0,1),(1,1),(4,1)]"},
-            {"test/test6.txt", "9", "[(0,3),(2,3),(0,1),(1,1),(5,1)]"}
+            {"test/test6.txt", "9", "[(0,3),(2,3),(0,1),(1,1),(5,5)]"}
         };
-        for (int i = 0; i < tests.length; i++) {
-            LinkedGraph graph = LinkedGraph.load(tests[i][0]);
-            int expectedFakeLinks = Integer.valueOf(tests[i][1]);
-            String chromesome = tests[i][2];
+        for (int i = 0; i < fakeEdgeTests.length; i++) {
+            LinkedGraph graph = LinkedGraph.load(fakeEdgeTests[i][0]);
+            int expectedFakeLinks = Integer.valueOf(fakeEdgeTests[i][1]);
+            String chromesome = fakeEdgeTests[i][2];
             LinkedGraph result = GAImplementation.BuildChromesome(graph, chromesome);
 
             int actualFakeLinks = result.totalFakeLinks();
@@ -118,5 +118,34 @@ public class GraphTests {
                 System.out.println("~~~~~~~~~~~~~~~~~~~~~~~~~");
             }
         }
+
+        String[][] comparisonTests = new String[][]{
+            {"test/test6.txt", 
+                "[(0,3),(2,3),(0,1),(1,1),(0,4)]",
+                "[(0,1),(1,1),(2,1),(3,1),(4,1)]"
+            },
+            {"test/test6.txt", 
+                "[(0,3),(2,3),(0,1),(1,1)]",
+                "[(0,1),(1,1),(2,1),(3,2)]"
+            }
+        };
+
+        for (int testIndex = 0; testIndex < comparisonTests.length; testIndex++) {
+            LinkedGraph graph = LinkedGraph.load(comparisonTests[testIndex][0]);
+            String expectedResult = null;
+            for (int comparisonIndex = 1; comparisonIndex < comparisonTests[testIndex].length; comparisonIndex++) {
+
+                LinkedGraph result = GAImplementation.BuildChromesome(graph, comparisonTests[testIndex][comparisonIndex]);
+                String actualResult = result.toString();
+                if (expectedResult == null) {
+                    expectedResult = actualResult;
+                } else if (!expectedResult.equals(actualResult)) {
+                    System.out.println("Test " + testIndex + " FAILED!");
+                    System.out.println("Expected: " + expectedResult);
+                    System.out.println("Actual: " + actualResult);
+                }
+            }
+        }
+
     }
 }
