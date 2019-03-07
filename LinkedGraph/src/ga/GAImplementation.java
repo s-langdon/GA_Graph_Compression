@@ -71,7 +71,6 @@ public class GAImplementation {
 	private static final String OUT_DIRECTORY = "data/out/";
 
 	private List<List<Integer>> ORIGINAL_NEIGHBORHOODS;
-	private Map<String, Integer> CACHED_FITNESSES;
 	private Map<String, Integer> CACHED_CHROMESOME_FITNESS;
 
 	/**
@@ -151,7 +150,6 @@ public class GAImplementation {
 				System.out.println("Unable to write to file: " + e.getMessage());
 			}
 			this.ORIGINAL_NEIGHBORHOODS = new LinkedList<>();
-			this.CACHED_FITNESSES = new HashMap<>();
 			this.CACHED_CHROMESOME_FITNESS = new HashMap<>();
 
 			for (int i = 0; i < this.GRAPH_SIZE; i++) {
@@ -523,16 +521,11 @@ public class GAImplementation {
 			this.EvaluateGene((LinkedGraph) current, chromesome, chromesome[i]);
 		}
 
-		String graphRepresentation = current.toString();
-		if (this.CACHED_FITNESSES.containsKey(graphRepresentation)) {
-			return this.CACHED_FITNESSES.get(graphRepresentation);
-		} else {
-			int fitness = current.totalFakeLinks();
-			String currentChromesomeString = buildChromesomeString(chromesome);
-			this.CACHED_FITNESSES.put(graphRepresentation, fitness);
-			this.CACHED_CHROMESOME_FITNESS.put(currentChromesomeString, fitness);
-			return fitness;
-		}
+		int fitness = current.totalFakeLinks();
+		String currentChromesomeString = buildChromesomeString(chromesome);
+		this.CACHED_CHROMESOME_FITNESS.put(currentChromesomeString, fitness);
+
+		return fitness;
 	}
 
 	/**
