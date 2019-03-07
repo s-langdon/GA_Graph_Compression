@@ -1,7 +1,7 @@
 outPrefix figeys
 source figeys.txt
-generations 500
-population 100
+generations 750
+population 250
 tournament 5
 runs 5
 elites 1

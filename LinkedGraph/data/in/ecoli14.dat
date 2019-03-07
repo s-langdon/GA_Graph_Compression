@@ -6,6 +6,6 @@ tournament 5
 runs 5
 elites 1
 compression 0.2
-mutation 0.1
+mutation 0.25
 crossover 0.9
-maxDistance 5
+maxDistance 3
