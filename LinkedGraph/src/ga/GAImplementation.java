@@ -72,6 +72,7 @@ public class GAImplementation {
 
     private List<List<Integer>> ORIGINAL_NEIGHBORHOODS;
     private Map<String, Integer> CACHED_FITNESSES;
+    private Map<String, Integer> CACHED_CHROMESOME_FITNESS;
 
     /**
      * builds GA based on fileLocation file
@@ -151,6 +152,8 @@ public class GAImplementation {
             }
             this.ORIGINAL_NEIGHBORHOODS = new LinkedList<>();
             this.CACHED_FITNESSES = new HashMap<>();
+            this.CACHED_CHROMESOME_FITNESS = new HashMap<>();
+            
             for (int i = 0; i < this.GRAPH_SIZE; i++) {
                 this.ORIGINAL_NEIGHBORHOODS.add(new LinkedList<Integer>());
             }
@@ -503,6 +506,11 @@ public class GAImplementation {
      * @return
      */
     public int Evaluate(int[][] chromesome) {
+        String chromesomeString = buildChromesomeString(chromesome);
+        if(this.CACHED_CHROMESOME_FITNESS.containsKey(chromesomeString)){
+            return this.CACHED_CHROMESOME_FITNESS.get(chromesomeString);
+        }
+        
         LinkedGraph current = (LinkedGraph) this.ORIGINAL_GRAPH.deepCopy();
         // iterate through each gene
         for (int i = 0; i < chromesome.length; i++) {
@@ -514,7 +522,9 @@ public class GAImplementation {
             return this.CACHED_FITNESSES.get(graphRepresentation);
         } else {
             int fitness = current.totalFakeLinks();
+            String currentChromesomeString = buildChromesomeString(chromesome);
             this.CACHED_FITNESSES.put(graphRepresentation, fitness);
+            this.CACHED_CHROMESOME_FITNESS.put(currentChromesomeString, fitness);
             return fitness;
         }
     }
