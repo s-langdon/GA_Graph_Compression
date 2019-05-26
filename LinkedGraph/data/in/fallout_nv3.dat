@@ -1,0 +1,11 @@
+outPrefix fallout_nv
+source falloutNV.txt
+generations 500
+population 100
+tournament 5
+runs 10
+elites 1
+mutation 0.1
+crossover 0.9
+compression 0.1
+maxDistance 3
