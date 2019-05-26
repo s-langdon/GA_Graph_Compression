@@ -22,7 +22,7 @@ PARAMETERS = [
     compression: 0.25,
     'maxDistance': 3,
   },{
-    compression: 0.10,
+    compression: 0.40,
     'maxDistance': 3,
   },{
     compression: 0.10,
