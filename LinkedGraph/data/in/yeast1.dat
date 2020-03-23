@@ -1,0 +1,11 @@
+outPrefix yeast
+source yeast.txt
+generations 750
+population 250
+tournament 5
+runs 5
+elites 1
+compression 0.25
+mutation 0.1
+crossover 0.9
+maxDistance 10

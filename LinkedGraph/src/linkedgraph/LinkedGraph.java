@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.util.List;
 // could probably replace all instances of arraylist with linked list
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Set;
@@ -160,57 +161,123 @@ public class LinkedGraph implements Graph {
 		return this.NODES[this.NODES[index].getId()];
 	}
 
+	public boolean sameCluster(int from, int to) {
+		int slave = this.NODES[from].getId();
+		int master = this.NODES[to].getId();
+
+		return slave == master;
+	}
+
 	/*
     From here on, the javadocs will be inherited from the Graph class that this
     code implements .
 	 */
 	public void merge(int from, int to) {
 
-		int aFrom = this.NODES[from].getId();
-		int aTo = this.NODES[to].getId();
-		if (aFrom == aTo) {
+		int slave = this.NODES[from].getId();
+		int master = this.NODES[to].getId();
+
+		if (master == slave) {
+			System.out.println(from + " to " + to);
 			return;
 		}
-		this.NODES[aTo].setLinks(this.fakeLinks(aFrom, aTo));
-		this.NODES[aTo].absorb(aFrom);
-		this.NODES[aTo].absorb(this.NODES[aFrom].getMergeNodes());
-		this.NODES[aFrom].setReference(NODES[aTo]);
-		ArrayList<Integer> master = new ArrayList<>(this.MATRIX.get(aTo));
-		ArrayList<Integer> slave = new ArrayList<>(this.MATRIX.get(aFrom));
-		// Ensure nodes are unique
+
+		Set<Integer> slaveMerges = new HashSet<>(this.NODES[slave].getMergeNodes());
+		slaveMerges.add(slave);
+		Set<Integer> masterMerges = new HashSet<>(this.NODES[master].getMergeNodes());
+		masterMerges.add(master);
+
+		if (!this.ORIGINAL_MATRIX.get(master).contains(slave)) {
+			this.NODES[master].addFakeEdge(slave);
+			this.NODES[slave].addFakeEdge(master);
+		}
+
+		this.NODES[slave].setReference(this.NODES[master]);
+
+		ArrayList<Integer> masterCurrentNeighbors = new ArrayList<>(this.MATRIX.get(master));
+		ArrayList<Integer> slaveCurrentNeighbors = new ArrayList<>(this.MATRIX.get(slave));
+		ArrayList<Integer> masterOriginalNeighbors = new ArrayList<>(this.ORIGINAL_MATRIX.get(master));
+		ArrayList<Integer> slaveOriginalNeighbors = new ArrayList<>(this.ORIGINAL_MATRIX.get(slave));
+
+		for (int slaveMerge : slaveMerges) {
+			for (int masterMerge : masterMerges) {
+				HashSet<Integer> slaveMergeOriginalNeighbors = new HashSet<>(this.ORIGINAL_MATRIX.get(slaveMerge));
+				slaveMergeOriginalNeighbors.addAll(this.NODES[slaveMerge].getFakeEdges());
+				slaveMergeOriginalNeighbors.removeAll(this.ORIGINAL_MATRIX.get(masterMerge));
+				slaveMergeOriginalNeighbors.remove(masterMerge);
+				this.NODES[masterMerge].addFakeEdges(slaveMergeOriginalNeighbors);
+				for (int slaveMergeNeighbor : slaveMergeOriginalNeighbors) {
+					this.NODES[slaveMergeNeighbor].addFakeEdge(masterMerge);
+				}
+
+				HashSet<Integer> masterMergeOriginalNeighbors = new HashSet<>(this.ORIGINAL_MATRIX.get(masterMerge));
+				masterMergeOriginalNeighbors.addAll(this.NODES[masterMerge].getFakeEdges());
+				masterMergeOriginalNeighbors.removeAll(this.ORIGINAL_MATRIX.get(slaveMerge));
+				masterMergeOriginalNeighbors.remove(slaveMerge);
+				this.NODES[slaveMerge].addFakeEdges(masterMergeOriginalNeighbors);
+				for (int masterMergeNeighbor : masterMergeOriginalNeighbors) {
+					this.NODES[masterMergeNeighbor].addFakeEdge(slaveMerge);
+				}
+			}
+		}
+
+		this.NODES[master].absorb(slaveMerges);
+
 		Set<Integer> newMaster = new HashSet<Integer>();
 
-		// removes links to each other
-		if (master.contains(aFrom)) {
-			master.remove(master.indexOf(aFrom));
+		// removes edges to each other
+		if (masterCurrentNeighbors.contains(slave)) {
+			masterCurrentNeighbors.remove(masterCurrentNeighbors.indexOf(slave));
 		}
-		if (slave.contains(aTo)) {
-			slave.remove(slave.indexOf(aTo));
+		if (slaveCurrentNeighbors.contains(master)) {
+			slaveCurrentNeighbors.remove(slaveCurrentNeighbors.indexOf(master));
 		}
-		newMaster.addAll(master);
-		newMaster.addAll(slave);
+
+		// combine neighbors
+		newMaster.addAll(slaveCurrentNeighbors);
+		newMaster.addAll(masterCurrentNeighbors);
 
 		// set new neighbor list to A+B-{to, from}
-		this.MATRIX.set(aTo, new ArrayList<>(newMaster));
+		this.MATRIX.set(master, new ArrayList<>(newMaster));
 
 		// updates neighbors' neighbors to include master(to)
 		for (int neighbor : newMaster) {
 			// remove if slave exists
-			if (this.MATRIX.get(neighbor).contains(aFrom)) {
+			if (this.MATRIX.get(neighbor).contains(slave)) {
 				this.MATRIX.get(neighbor).remove(
-						this.MATRIX.get(neighbor).indexOf(aFrom)
+						this.MATRIX.get(neighbor).indexOf(slave)
 				);
 			}
 			// add if master doesn't exist
-			if (!this.MATRIX.get(neighbor).contains(aTo)) {
-				this.MATRIX.get(neighbor).add(aTo);
+			if (!this.MATRIX.get(neighbor).contains(master)) {
+				this.MATRIX.get(neighbor).add(master);
 			}
 		}
 		// updates size
 		this.SIZE--;
 	}
 
+	public int totalFakeLinks() {
+		int total = 0;
+		for (Node node : this.NODES) {
+			total += node.getFakeEdges().size();
+		}
+		return total / 2;
+	}
+
+	public int printFakeLinks() {
+		int total = 0;
+		for (Node node : this.NODES) {
+			total += node.getFakeEdges().size();
+			System.out.println(node.ID + ": " + node.getFakeEdges());
+		}
+		return total / 2;
+	}
+
 	public int fakeLinks(int from, int to) {
+		System.err.println("method 'fakeLinks' disabled.");
+		return -1;
+		/*
 		int aFrom = this.NODES[from].getId();
 		int aTo = this.NODES[to].getId();
 		if (aFrom == aTo) {
@@ -256,6 +323,7 @@ public class LinkedGraph implements Graph {
 			rawLinks = fakes.size() - 2;
 		}
 		return rawLinks + inheritedLinks;
+		 */
 	}
 
 	public LinkedGraph deepCopy() {
@@ -284,6 +352,9 @@ public class LinkedGraph implements Graph {
 				if (this.SHOW_MEMORY) {
 					vertice += "," + Integer.toHexString(this.NODES[i].hashCode());
 				}
+				if (this.NODES[i].getMergeNodes().size() > 0) {
+					vertice += ": " + this.NODES[i].getMergeNodes();
+				}
 				vertice += ") -> " + String.join(",", neighbors) + "}";
 				System.out.println(vertice);
 			}
@@ -301,11 +372,14 @@ public class LinkedGraph implements Graph {
 				for (Integer iNeighbor : this.MATRIX.get(i)) {
 					neighbors.add(String.valueOf(iNeighbor));
 				}
-				String vertice = "{(" + i;
+				ArrayList<Integer> cluster = new ArrayList<>(this.NODES[i].getMergeNodes());
+				cluster.add(i);
+				Collections.sort(cluster);
+				String vertice = "{" + cluster;
 				if (this.SHOW_MEMORY) {
-					vertice += "," + Integer.toHexString(this.NODES[i].hashCode());
+					vertice += ":" + Integer.toHexString(this.NODES[i].hashCode());
 				}
-				vertice += ") -> " + String.join(",", neighbors) + "}";
+				vertice += " -> " + String.join(",", neighbors) + "}";
 				returnValue.add(vertice);
 			}
 		}
@@ -356,6 +430,11 @@ public class LinkedGraph implements Graph {
 	public int distance(int from, int to) {
 		int aFrom = this.NODES[from].getId();
 		int aTo = this.NODES[to].getId();
+
+		if (aFrom == aTo) {
+			return 0;
+		}
+
 		int shortest = Integer.MAX_VALUE;
 		// keeping a track of previously visited to avoid infinite loops
 		ArrayList<Integer> explored = new ArrayList<Integer>();
