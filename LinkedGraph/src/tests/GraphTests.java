@@ -22,7 +22,7 @@ public class GraphTests {
 	tourny select : < 
 	crossover : < 1
 	mutation : < 1
-	chromesome length : int(500)
+	chromosome length : int(500)
 	
 	ouput_prefix :String 
 	
@@ -98,8 +98,8 @@ public class GraphTests {
         for (int i = 0; i < fakeEdgeTests.length; i++) {
             LinkedGraph graph = LinkedGraph.load(fakeEdgeTests[i][0]);
             int expectedFakeLinks = Integer.valueOf(fakeEdgeTests[i][1]);
-            String chromesome = fakeEdgeTests[i][2];
-            LinkedGraph result = GAImplementation.BuildChromesome(graph, chromesome);
+            String chromosome = fakeEdgeTests[i][2];
+            LinkedGraph result = GAImplementation.BuildChromosome(graph, chromosome);
 
             int actualFakeLinks = result.totalFakeLinks();
 
@@ -112,7 +112,7 @@ public class GraphTests {
                 System.out.println("FAKE LINKS ~~~~~~~~~~~~~~");
                 result.printFakeLinks();
                 System.out.println("~~~~~~~~~~~");
-                System.out.println("Chromesome: " + chromesome);
+                System.out.println("Chromosome: " + chromosome);
                 System.out.println("Expected: " + expectedFakeLinks);
                 System.out.println("Actual: " + actualFakeLinks);
                 System.out.println("~~~~~~~~~~~~~~~~~~~~~~~~~");
@@ -135,7 +135,7 @@ public class GraphTests {
             String expectedResult = null;
             for (int comparisonIndex = 1; comparisonIndex < comparisonTests[testIndex].length; comparisonIndex++) {
 
-                LinkedGraph result = GAImplementation.BuildChromesome(graph, comparisonTests[testIndex][comparisonIndex]);
+                LinkedGraph result = GAImplementation.BuildChromosome(graph, comparisonTests[testIndex][comparisonIndex]);
                 String actualResult = result.toString();
                 if (expectedResult == null) {
                     expectedResult = actualResult;

@@ -29,7 +29,7 @@ generations : 10000
 tournament : 1
 crossover   0.23
 mutation 1.0
-chromesome 10
+chromosome 10
 runs 10
 source ecoli.txt
 
@@ -51,7 +51,7 @@ public class GAImplementation {
 	private float MUTATION_RATE;
 	private float ELITISM_RATE;
 	private int ELITE_COUNT;
-	private int CHROMESOME_SIZE;
+	private int CHROMOSOME_SIZE;
 	private int DISTANCE_LIMIT;
 	private int GRAPH_SIZE;
 	private int RUN_SPAN;
@@ -71,7 +71,7 @@ public class GAImplementation {
 	private static final String OUT_DIRECTORY = "data/out/";
 
 	private List<List<Integer>> ORIGINAL_NEIGHBORHOODS;
-	private Map<String, Integer> CACHED_CHROMESOME_FITNESS;
+	private Map<String, Integer> CACHED_CHROMOSOME_FITNESS;
 
 	/**
 	 * builds GA based on fileLocation file
@@ -150,7 +150,7 @@ public class GAImplementation {
 				System.out.println("Unable to write to file: " + e.getMessage());
 			}
 			this.ORIGINAL_NEIGHBORHOODS = new LinkedList<>();
-			this.CACHED_CHROMESOME_FITNESS = new HashMap<>();
+			this.CACHED_CHROMOSOME_FITNESS = new HashMap<>();
 
 			for (int i = 0; i < this.GRAPH_SIZE; i++) {
 				this.ORIGINAL_NEIGHBORHOODS.add(new LinkedList<Integer>());
@@ -158,8 +158,8 @@ public class GAImplementation {
 			// initialize global settings
 			int globalWorstFitness = Integer.MIN_VALUE;
 			int globalBestFitness = Integer.MAX_VALUE;
-			int[][] globalBest = new int[CHROMESOME_SIZE][2];
-			int[][] globalWorst = new int[CHROMESOME_SIZE][2];
+			int[][] globalBest = new int[CHROMOSOME_SIZE][2];
+			int[][] globalWorst = new int[CHROMOSOME_SIZE][2];
 			long globalSum = 0;
 			this.POPULATION_FITNESS = new int[this.POPULATION_SIZE];
 			// Each Run
@@ -173,17 +173,17 @@ public class GAImplementation {
 
 				int runWorstFitness = Integer.MIN_VALUE;
 				int runBestFitness = Integer.MAX_VALUE;
-				int[][] runBest = new int[CHROMESOME_SIZE][2];
-				int[][] runWorst = new int[CHROMESOME_SIZE][2];
+				int[][] runBest = new int[CHROMOSOME_SIZE][2];
+				int[][] runWorst = new int[CHROMOSOME_SIZE][2];
 				long runSum = 0;
 
 				// Each Generation
 				for (int gen = 1; gen <= this.GENERATION_SPAN; gen++) {
 					long startTime = System.currentTimeMillis();
 					int genBestFitness = Integer.MAX_VALUE;
-					int[][] genBest = new int[CHROMESOME_SIZE][2];
+					int[][] genBest = new int[CHROMOSOME_SIZE][2];
 					int genWorstFitness = Integer.MIN_VALUE;
-					int[][] genWorst = new int[CHROMESOME_SIZE][2];
+					int[][] genWorst = new int[CHROMOSOME_SIZE][2];
 					long genSum = 0;
 					System.out.println("Thread " + Thread.currentThread().getId() + " Run " + run + " Generation " + gen);
 
@@ -254,8 +254,8 @@ public class GAImplementation {
 								+ this.SEED + ","
 								+ this.GRAPH_SIZE + ","
 								+ this.POPULATION_SIZE + ","
-								+ String.format("%.5f%%", this.CHROMESOME_SIZE / Double.valueOf(this.GRAPH_SIZE)) + ","
-								+ this.CHROMESOME_SIZE + ","
+								+ String.format("%.5f%%", this.CHROMOSOME_SIZE / Double.valueOf(this.GRAPH_SIZE)) + ","
+								+ this.CHROMOSOME_SIZE + ","
 								+ String.format("%.5f%%", this.ELITE_COUNT / Double.valueOf(this.GRAPH_SIZE)) + ","
 								+ this.ELITE_COUNT + ","
 								+ this.TOURNAMENT_SIZE + ","
@@ -276,9 +276,9 @@ public class GAImplementation {
 								+ genBestFitness + ","
 								+ (genSum / this.POPULATION_SIZE) + ","
 								+ genWorstFitness + ","
-								+ "\"" + GAImplementation.buildChromesomeString(globalBest) + "\","
-								+ "\"" + GAImplementation.buildChromesomeString(runBest) + "\","
-								+ "\"" + GAImplementation.buildChromesomeString(genBest) + "\","
+								+ "\"" + GAImplementation.buildChromosomeString(globalBest) + "\","
+								+ "\"" + GAImplementation.buildChromosomeString(runBest) + "\","
+								+ "\"" + GAImplementation.buildChromosomeString(genBest) + "\","
 						);
 						this.OUTPUT.newLine();
 						this.OUTPUT.flush();
@@ -304,12 +304,12 @@ public class GAImplementation {
 	}
 
 	/**
-	 * returns chromesome at specified index
+	 * returns chromosome at specified index
 	 *
 	 * @param index
 	 * @return
 	 */
-	public int[][] getChromesome(int index) {
+	public int[][] getChromosome(int index) {
 		if (index >= this.POPULATION_SIZE) {
 			return null;
 		}
@@ -317,31 +317,31 @@ public class GAImplementation {
 	}
 
 	/**
-	 * prints all the chromesomes
+	 * prints all the chromosomes
 	 */
 	public void print() {
 		for (int i = 0; i < this.POPULATION_SIZE; i++) {
-			System.out.print("Chromesome " + i + " ");
+			System.out.print("Chromosome " + i + " ");
 			println(this.POPULATION[i]);
 		}
 	}
 
 	/**
-	 * prints specific chromesomes
+	 * prints specific chromosomes
 	 *
-	 * @param chromesome
+	 * @param chromosome
 	 */
-	public static void print(int[][] chromesome) {
-		System.out.print(GAImplementation.buildChromesomeString(chromesome));
+	public static void print(int[][] chromosome) {
+		System.out.print(GAImplementation.buildChromosomeString(chromosome));
 	}
 
 	/**
-	 * prints specific chromesomes with a newline at the end
+	 * prints specific chromosomes with a newline at the end
 	 *
-	 * @param chromesome
+	 * @param chromosome
 	 */
-	public static void println(int[][] chromesome) {
-		print(chromesome);
+	public static void println(int[][] chromosome) {
+		print(chromosome);
 		System.out.println();
 	}
 
@@ -352,16 +352,16 @@ public class GAImplementation {
 		if (!VALID) {
 			return;
 		}
-		this.POPULATION = new int[this.POPULATION_SIZE][this.CHROMESOME_SIZE][2];
+		this.POPULATION = new int[this.POPULATION_SIZE][this.CHROMOSOME_SIZE][2];
 		for (int c = 0; c < this.POPULATION_SIZE; c++) {
-			for (int g = 0; g < this.CHROMESOME_SIZE; g++) {
+			for (int g = 0; g < this.CHROMOSOME_SIZE; g++) {
 				this.MutateGene(this.POPULATION[c][g]);
 			}
 		}
 	}
 
 	/**
-	 * deep copy chromesome
+	 * deep copy chromosome
 	 *
 	 * @param pairs
 	 * @return
@@ -376,17 +376,17 @@ public class GAImplementation {
 	}
 
 	/**
-	 * Gets a preset number of individual chromesomes, return the best
-	 * chromesome
+	 * Gets a preset number of individual chromosomes, return the best
+	 * chromosome
 	 *
-	 * @return chromesome
+	 * @return chromosome
 	 */
 	public int[][] TournamentSelection() {
 		int best = Integer.MAX_VALUE;
-		int[][] winner = new int[this.CHROMESOME_SIZE][2];
+		int[][] winner = new int[this.CHROMOSOME_SIZE][2];
 		for (int i = 0; i < this.TOURNAMENT_SIZE; i++) {
 			int randomIndex = this.RANDOM.nextInt(this.POPULATION_SIZE);
-			int[][] participant = this.getChromesome(randomIndex);
+			int[][] participant = this.getChromosome(randomIndex);
 			int fitness = this.EvaluatePrevious(randomIndex);
 			if (fitness < best) {
 				best = fitness;
@@ -398,7 +398,7 @@ public class GAImplementation {
 	}
 
 	/**
-	 * cross over the two given chromesomes
+	 * cross over the two given chromosomes
 	 *
 	 * @param pair1
 	 * @param pair2
@@ -407,8 +407,8 @@ public class GAImplementation {
 		if (!VALID) {
 			return;
 		}
-		int start = this.RANDOM.nextInt(CHROMESOME_SIZE);
-		int end = this.RANDOM.nextInt(CHROMESOME_SIZE - start) + start;
+		int start = this.RANDOM.nextInt(CHROMOSOME_SIZE);
+		int end = this.RANDOM.nextInt(CHROMOSOME_SIZE - start) + start;
 		for (int i = 0; i < pair1.length; i++) {
 			if (i >= start && i <= end) {
 				int tempRoot = pair1[i][0];
@@ -436,7 +436,7 @@ public class GAImplementation {
 	}
 
 	/**
-	 * mutate the given chromesome
+	 * mutate the given chromosome
 	 *
 	 * @param pairs
 	 */
@@ -448,10 +448,10 @@ public class GAImplementation {
 		this.MutateGene(pairs[randomIndex]);
 	}
 
-	private boolean duplicateGene(int[][] chromesome, int[] gene) {
+	private boolean duplicateGene(int[][] chromosome, int[] gene) {
 		boolean found = false;
-		for (int i = 0; i < chromesome.length; i++) {
-			if (chromesome[i][0] == gene[0] && chromesome[i][1] == gene[1]) {
+		for (int i = 0; i < chromosome.length; i++) {
+			if (chromosome[i][0] == gene[0] && chromosome[i][1] == gene[1]) {
 				if(found){
 					return true;
 				} else{
@@ -463,29 +463,29 @@ public class GAImplementation {
 	}
 
 	/**
-	 * Evaluates a single gene within a chromesome
+	 * Evaluates a single gene within a chromosome
 	 *
 	 * @param graph
 	 * @param gene
 	 * @return geneFitness
 	 */
-	public void EvaluateGene(LinkedGraph graph, int[][] chromesome, int[] gene) {
+	public void EvaluateGene(LinkedGraph graph, int[][] chromosome, int[] gene) {
 		int from = gene[0];
 		int to = (gene[0] + gene[1]) % this.GRAPH_SIZE;
 		int[] tempGene = new int[]{gene[0], gene[1]};
 
-		if (duplicateGene(chromesome, tempGene) || graph.sameCluster(from, to)) {
+		if (duplicateGene(chromosome, tempGene) || graph.sameCluster(from, to)) {
 			List<Integer> possibleNeighbors = graph.bfs(from, this.DISTANCE_LIMIT);
 			for (Integer neighbor : possibleNeighbors) {
 				to = neighbor;
 				tempGene[0] = from;
 				tempGene[1] = Math.floorMod(to - from, this.GRAPH_SIZE);
-				if (!graph.sameCluster(from, to) && !duplicateGene(chromesome, tempGene)) {
+				if (!graph.sameCluster(from, to) && !duplicateGene(chromosome, tempGene)) {
 					break;
 				}
 			}
 
-			while (duplicateGene(chromesome, tempGene) || graph.sameCluster(from, to)) {
+			while (duplicateGene(chromosome, tempGene) || graph.sameCluster(from, to)) {
 				from = this.RANDOM.nextInt(this.GRAPH_SIZE);
 				possibleNeighbors = graph.bfs(from, this.DISTANCE_LIMIT);
 				if (possibleNeighbors.size() < 1) {
@@ -503,27 +503,27 @@ public class GAImplementation {
 	}
 
 	/**
-	 * fitness function. updates chromesome if chromesome has some invalid
+	 * fitness function. updates chromosome if chromosome has some invalid
 	 * genes.
 	 *
-	 * @param chromesome
+	 * @param chromosome
 	 * @return
 	 */
-	public int Evaluate(int[][] chromesome) {
-		String chromesomeString = buildChromesomeString(chromesome);
-		if (this.CACHED_CHROMESOME_FITNESS.containsKey(chromesomeString)) {
-			return this.CACHED_CHROMESOME_FITNESS.get(chromesomeString);
+	public int Evaluate(int[][] chromosome) {
+		String chromosomeString = buildChromosomeString(chromosome);
+		if (this.CACHED_CHROMOSOME_FITNESS.containsKey(chromosomeString)) {
+			return this.CACHED_CHROMOSOME_FITNESS.get(chromosomeString);
 		}
 
 		LinkedGraph current = (LinkedGraph) this.ORIGINAL_GRAPH.deepCopy();
 		// iterate through each gene
-		for (int i = 0; i < chromesome.length; i++) {
-			this.EvaluateGene((LinkedGraph) current, chromesome, chromesome[i]);
+		for (int i = 0; i < chromosome.length; i++) {
+			this.EvaluateGene((LinkedGraph) current, chromosome, chromosome[i]);
 		}
 
 		int fitness = current.totalFakeLinks();
-		String currentChromesomeString = buildChromesomeString(chromesome);
-		this.CACHED_CHROMESOME_FITNESS.put(currentChromesomeString, fitness);
+		String currentChromosomeString = buildChromosomeString(chromosome);
+		this.CACHED_CHROMOSOME_FITNESS.put(currentChromosomeString, fitness);
 
 		return fitness;
 	}
@@ -531,12 +531,12 @@ public class GAImplementation {
 	/**
 	 * returns the fitness from the previous generation
 	 *
-	 * @param chromesome
+	 * @param chromosome
 	 * @return
 	 */
-	public int EvaluatePrevious(int chromesome) {
+	public int EvaluatePrevious(int chromosome) {
 		// wrapper function primarily for sanity
-		return this.POPULATION_FITNESS[chromesome];
+		return this.POPULATION_FITNESS[chromosome];
 	}
 
 	/**
@@ -545,7 +545,7 @@ public class GAImplementation {
 	 * @return newPopulation
 	 */
 	public int[][][] getElitePopulation() {
-		int[][][] newPop = new int[this.POPULATION_SIZE][this.CHROMESOME_SIZE][2];
+		int[][][] newPop = new int[this.POPULATION_SIZE][this.CHROMOSOME_SIZE][2];
 		PriorityQueue<WrappedNode> fitness = new PriorityQueue<WrappedNode>();
 		for (int i = 0; i < this.POPULATION_SIZE; i++) {
 			fitness.add(new WrappedNode(i, EvaluatePrevious(i)));
@@ -553,7 +553,7 @@ public class GAImplementation {
 		for (int e = 0; e < this.ELITE_COUNT; e++) {
 			//System.out.println(fitness.size());
 			WrappedNode elite = fitness.remove();
-			newPop[e] = this.getChromesome(elite.index);
+			newPop[e] = this.getChromosome(elite.index);
 		}
 		return newPop;
 	}
@@ -568,7 +568,7 @@ public class GAImplementation {
 		this.GENERATION_SPAN = DEFAULT_SIZE;
 		this.POPULATION_SIZE = DEFAULT_SIZE;
 		this.TOURNAMENT_SIZE = DEFAULT_SIZE;
-		this.CHROMESOME_SIZE = DEFAULT_SIZE;
+		this.CHROMOSOME_SIZE = DEFAULT_SIZE;
 		this.DISTANCE_LIMIT = DEFAULT_SIZE;
 		this.ELITE_COUNT = DEFAULT_SIZE;
 		this.GRAPH_SIZE = DEFAULT_SIZE;
@@ -593,16 +593,16 @@ public class GAImplementation {
 			this.VALID = false;
 		}
 		if (this.COMPRESSION_RATE < 1.0 && this.COMPRESSION_RATE > 0.0) {
-			this.CHROMESOME_SIZE = (int) (this.COMPRESSION_RATE * this.GRAPH_SIZE);
+			this.CHROMOSOME_SIZE = (int) (this.COMPRESSION_RATE * this.GRAPH_SIZE);
 		} else {
-			if (this.CHROMESOME_SIZE < 1) {
+			if (this.CHROMOSOME_SIZE < 1) {
 				System.out.println("Compression rate invalid"
 						+ ", use parameter: compression [0.0,1.0]");
 				this.VALID = false;
 			} else {
 				System.out.println("Compression rate invalid"
-						+ ", defaulting to parameter: chromesome "
-						+ this.CHROMESOME_SIZE
+						+ ", defaulting to parameter: chromosome "
+						+ this.CHROMOSOME_SIZE
 				);
 			}
 		}
@@ -709,8 +709,8 @@ public class GAImplementation {
 					case "elites":
 						this.ELITE_COUNT = Integer.parseInt(data[1].trim());
 						break;
-					case "chromesome":
-						this.CHROMESOME_SIZE = Integer.parseInt(data[1].trim());
+					case "chromosome":
+						this.CHROMOSOME_SIZE = Integer.parseInt(data[1].trim());
 						break;
 					case "population":
 						this.POPULATION_SIZE = Integer.parseInt(data[1].trim());
@@ -749,23 +749,23 @@ public class GAImplementation {
 	}
 
 	/**
-	 * returns string representation of chromesome
+	 * returns string representation of chromosome
 	 *
-	 * @param chromesome
+	 * @param chromosome
 	 * @return
 	 */
-	public static String buildChromesomeString(int[][] chromesome) {
+	public static String buildChromosomeString(int[][] chromosome) {
 		String output = "[";
-		for (int i = 0; i < chromesome.length; i++) {
+		for (int i = 0; i < chromosome.length; i++) {
 			if (i > 0) {
 				output += ",";
 			}
 			output += "(";
-			for (int j = 0; j < chromesome[i].length; j++) {
+			for (int j = 0; j < chromosome[i].length; j++) {
 				if (j > 0) {
 					output += ",";
 				}
-				output += chromesome[i][j];
+				output += chromosome[i][j];
 			}
 			output += ")";
 		}
@@ -773,14 +773,14 @@ public class GAImplementation {
 		return output;
 	}
 
-	public static LinkedGraph BuildChromesome(LinkedGraph testGraph, String chromesome) {
+	public static LinkedGraph BuildChromosome(LinkedGraph testGraph, String chromosome) {
 		LinkedGraph graph = testGraph.deepCopy();
-		chromesome = chromesome.replaceAll("\\]", "");
-		chromesome = chromesome.replaceAll("\\[", "");
-		String[] chromesomes = chromesome.split("\\),\\(");
+		chromosome = chromosome.replaceAll("\\]", "");
+		chromosome = chromosome.replaceAll("\\[", "");
+		String[] chromosomes = chromosome.split("\\),\\(");
 		int sum = 0;
 
-		for (String c : chromesomes) {
+		for (String c : chromosomes) {
 			c = c.replaceAll("\\(", "");
 			c = c.replaceAll("\\)", "");
 			String[] gene = c.split(",");
@@ -793,19 +793,19 @@ public class GAImplementation {
 	}
 
 	/**
-	 * shows step by step fitness evaluation of chromesome
+	 * shows step by step fitness evaluation of chromosome
 	 *
 	 * @param testGraph
-	 * @param chromesome
+	 * @param chromosome
 	 */
-	public static void ViewChromesome(LinkedGraph testGraph, String chromesome) {
-		LinkedGraph graph = BuildChromesome(testGraph, chromesome);
+	public static void ViewChromosome(LinkedGraph testGraph, String chromosome) {
+		LinkedGraph graph = BuildChromosome(testGraph, chromosome);
 		System.out.println("Should be " + graph.totalFakeLinks() + " fitness");
-		PrintChromesome(graph);
+		PrintChromosome(graph);
 
 	}
 
-	public static void PrintChromesome(LinkedGraph g) {
+	public static void PrintChromosome(LinkedGraph g) {
 		g.print();
 		GraphDisplay.displayLinkedGraph(g);
 //		
