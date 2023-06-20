@@ -119,7 +119,7 @@ public class GAImplementation {
 						+ "Graph Size,"
 						+ "Population Size,"
 						+ "Compression Rate,"
-						+ "Chromesome Size,"
+						+ "Chromosome Size,"
 						+ "Elitism Rate,"
 						+ "Elite Size,"
 						+ "Tournament Size,"
@@ -140,9 +140,9 @@ public class GAImplementation {
 						+ "Generation Best Fitness,"
 						+ "Generation Average Fitness,"
 						+ "Generation Worst Fitness,"
-						+ "Global Best Chromesome,"
-						+ "Run Best Chromesome,"
-						+ "Generation Best Chromesome,"
+						+ "Global Best Chromosome,"
+						+ "Run Best Chromosome,"
+						+ "Generation Best Chromosome,"
 				);
 				this.OUTPUT.newLine();
 				this.OUTPUT.flush();

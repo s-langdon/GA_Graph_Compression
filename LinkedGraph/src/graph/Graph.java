@@ -70,7 +70,7 @@ public interface Graph {
     /**
      * This method uses Dijkstra's algorithm to determine the distance between two
      * nodes in the graph object.
-     * Note that the graph is taken to be unweighed and undirected.
+     * Note that the graph is taken to be unweighted and undirected.
      * @param from Integer index from location.
      * @param to Integer index to location.
      * @return Integer distance between 'from' node and 'to' node.
