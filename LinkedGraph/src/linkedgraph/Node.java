@@ -93,7 +93,8 @@ public class Node {
 
 	/**
 	 * Returns the value of the end of the list of references
-	 *
+	 * i.e. If the node has been absorbed by another node, it will return
+	 * the id of the node into which it has been absorbed
 	 * @return
 	 */
 	public int getId() {

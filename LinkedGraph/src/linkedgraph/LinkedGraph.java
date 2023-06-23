@@ -95,6 +95,7 @@ public class LinkedGraph implements Graph {
 	public void addEdge(int from, int to) {
 		int aFrom = this.NODES[from].getId();
 		int aTo = this.NODES[to].getId();
+		// if the edge is not already in the adjacency list, add it
 		if (!this.MATRIX.get(aFrom).contains(aTo)) {
 			this.MATRIX.get(aFrom).add(aTo);
 			this.ORIGINAL_MATRIX.get(aFrom).add(aTo);
@@ -108,7 +109,7 @@ public class LinkedGraph implements Graph {
 	/**
 	 * Loads and returns a LinkedGraph with an existing list of edges.
 	 *
-	 * @param matrix the list of edges in 2D ArrayList form
+	 * @param m the list of edges in 2D ArrayList form
 	 * @return
 	 */
 	public static LinkedGraph load(ArrayList<ArrayList<Integer>> m) {
@@ -161,11 +162,17 @@ public class LinkedGraph implements Graph {
 		return this.NODES[this.NODES[index].getId()];
 	}
 
+	/**
+	 *
+	 * @param from index of the first node
+	 * @param to index of the second node
+	 * @return True if the nodes have been merged into the same supernode, False otherwise
+	 */
 	public boolean sameCluster(int from, int to) {
-		int slave = this.NODES[from].getId();
-		int master = this.NODES[to].getId();
+		int secondary = this.NODES[from].getId();
+		int primary = this.NODES[to].getId();
 
-		return slave == master;
+		return secondary == primary;
 	}
 
 	/*
@@ -174,83 +181,102 @@ public class LinkedGraph implements Graph {
 	 */
 	public void merge(int from, int to) {
 
-		int slave = this.NODES[from].getId();
-		int master = this.NODES[to].getId();
+		int secondary = this.NODES[from].getId();
+		int primary = this.NODES[to].getId();
 
-		if (master == slave) {
+		// if already in the same supernode, return
+		if (primary == secondary) {
 			System.out.println(from + " to " + to);
 			return;
 		}
 
-		Set<Integer> slaveMerges = new HashSet<>(this.NODES[slave].getMergeNodes());
-		slaveMerges.add(slave);
-		Set<Integer> masterMerges = new HashSet<>(this.NODES[master].getMergeNodes());
-		masterMerges.add(master);
+		// get all nodes already merged with the secondary node
+		Set<Integer> secondaryMerges = new HashSet<>(this.NODES[secondary].getMergeNodes());
+		// add the secondary node itself to the nodes to be merged
+		secondaryMerges.add(secondary);
+		// do the same for the primary node (which we are merging into)
+		Set<Integer> primaryMerges = new HashSet<>(this.NODES[primary].getMergeNodes());
+		primaryMerges.add(primary);
 
-		if (!this.ORIGINAL_MATRIX.get(master).contains(slave)) {
-			this.NODES[master].addFakeEdge(slave);
-			this.NODES[slave].addFakeEdge(master);
+		// if there wasn't already an edge between the primary and secondary node, add a fake edge to each
+		if (!this.ORIGINAL_MATRIX.get(primary).contains(secondary)) {
+			this.NODES[primary].addFakeEdge(secondary);
+			this.NODES[secondary].addFakeEdge(primary);
 		}
 
-		this.NODES[slave].setReference(this.NODES[master]);
+		// update the reference for the secondary node to reflect being absorbed into the primary node
+		this.NODES[secondary].setReference(this.NODES[primary]);
 
-		ArrayList<Integer> masterCurrentNeighbors = new ArrayList<>(this.MATRIX.get(master));
-		ArrayList<Integer> slaveCurrentNeighbors = new ArrayList<>(this.MATRIX.get(slave));
-		ArrayList<Integer> masterOriginalNeighbors = new ArrayList<>(this.ORIGINAL_MATRIX.get(master));
-		ArrayList<Integer> slaveOriginalNeighbors = new ArrayList<>(this.ORIGINAL_MATRIX.get(slave));
+		ArrayList<Integer> primaryCurrentNeighbors = new ArrayList<>(this.MATRIX.get(primary));
+		ArrayList<Integer> secondaryCurrentNeighbors = new ArrayList<>(this.MATRIX.get(secondary));
+		ArrayList<Integer> primaryOriginalNeighbors = new ArrayList<>(this.ORIGINAL_MATRIX.get(primary));
+		ArrayList<Integer> secondaryOriginalNeighbors = new ArrayList<>(this.ORIGINAL_MATRIX.get(secondary));
 
-		for (int slaveMerge : slaveMerges) {
-			for (int masterMerge : masterMerges) {
-				HashSet<Integer> slaveMergeOriginalNeighbors = new HashSet<>(this.ORIGINAL_MATRIX.get(slaveMerge));
-				slaveMergeOriginalNeighbors.addAll(this.NODES[slaveMerge].getFakeEdges());
-				slaveMergeOriginalNeighbors.removeAll(this.ORIGINAL_MATRIX.get(masterMerge));
-				slaveMergeOriginalNeighbors.remove(masterMerge);
-				this.NODES[masterMerge].addFakeEdges(slaveMergeOriginalNeighbors);
-				for (int slaveMergeNeighbor : slaveMergeOriginalNeighbors) {
-					this.NODES[slaveMergeNeighbor].addFakeEdge(masterMerge);
+
+		// for each of the nodes in the secondary (super)node that needs to be merged
+		for (int secondaryMerge : secondaryMerges) {
+			// for each of the nodes held in the primary (super)node that we are merging into
+			for (int primaryMerge : primaryMerges) {
+				// get the original set of neighbours for the secondary node
+				HashSet<Integer> secondaryMergeOriginalNeighbors = new HashSet<>(this.ORIGINAL_MATRIX.get(secondaryMerge));
+				// add in all nodes connected by a fake edge to the list of neighbours
+				secondaryMergeOriginalNeighbors.addAll(this.NODES[secondaryMerge].getFakeEdges());
+				// remove any nodes that are already adjacent to the node we are merging into
+				secondaryMergeOriginalNeighbors.removeAll(this.ORIGINAL_MATRIX.get(primaryMerge));
+				// remove the node we are merging into from the neighbours
+				secondaryMergeOriginalNeighbors.remove(primaryMerge);
+				// all of the edges and fake edges to the node being merged into which
+				// did not already exist to the primary node are added as fake edges
+				this.NODES[primaryMerge].addFakeEdges(secondaryMergeOriginalNeighbors);
+
+				// add the corresponding fake edge to each of the secondary node's neighbours
+				for (int secondaryMergeNeighbor : secondaryMergeOriginalNeighbors) {
+					this.NODES[secondaryMergeNeighbor].addFakeEdge(primaryMerge);
 				}
 
-				HashSet<Integer> masterMergeOriginalNeighbors = new HashSet<>(this.ORIGINAL_MATRIX.get(masterMerge));
-				masterMergeOriginalNeighbors.addAll(this.NODES[masterMerge].getFakeEdges());
-				masterMergeOriginalNeighbors.removeAll(this.ORIGINAL_MATRIX.get(slaveMerge));
-				masterMergeOriginalNeighbors.remove(slaveMerge);
-				this.NODES[slaveMerge].addFakeEdges(masterMergeOriginalNeighbors);
-				for (int masterMergeNeighbor : masterMergeOriginalNeighbors) {
-					this.NODES[masterMergeNeighbor].addFakeEdge(slaveMerge);
+				// repeat the above process to add fake edges from the neighbours of the primary node to the secondary node
+				HashSet<Integer> primaryMergeOriginalNeighbors = new HashSet<>(this.ORIGINAL_MATRIX.get(primaryMerge));
+				primaryMergeOriginalNeighbors.addAll(this.NODES[primaryMerge].getFakeEdges());
+				primaryMergeOriginalNeighbors.removeAll(this.ORIGINAL_MATRIX.get(secondaryMerge));
+				primaryMergeOriginalNeighbors.remove(secondaryMerge);
+				this.NODES[secondaryMerge].addFakeEdges(primaryMergeOriginalNeighbors);
+				for (int primaryMergeNeighbor : primaryMergeOriginalNeighbors) {
+					this.NODES[primaryMergeNeighbor].addFakeEdge(secondaryMerge);
 				}
 			}
 		}
 
-		this.NODES[master].absorb(slaveMerges);
+		// once all the fake edges have been calculated, absorbs the secondary node(s) into the primary node
+		this.NODES[primary].absorb(secondaryMerges);
 
-		Set<Integer> newMaster = new HashSet<Integer>();
+		Set<Integer> newPrimary = new HashSet<Integer>();
 
-		// removes edges to each other
-		if (masterCurrentNeighbors.contains(slave)) {
-			masterCurrentNeighbors.remove(masterCurrentNeighbors.indexOf(slave));
+		// removes edges to each other, since the nodes are now the same supernode
+		if (primaryCurrentNeighbors.contains(secondary)) {
+			primaryCurrentNeighbors.remove(primaryCurrentNeighbors.indexOf(secondary));
 		}
-		if (slaveCurrentNeighbors.contains(master)) {
-			slaveCurrentNeighbors.remove(slaveCurrentNeighbors.indexOf(master));
+		if (secondaryCurrentNeighbors.contains(primary)) {
+			secondaryCurrentNeighbors.remove(secondaryCurrentNeighbors.indexOf(primary));
 		}
 
 		// combine neighbors
-		newMaster.addAll(slaveCurrentNeighbors);
-		newMaster.addAll(masterCurrentNeighbors);
+		newPrimary.addAll(secondaryCurrentNeighbors);
+		newPrimary.addAll(primaryCurrentNeighbors);
 
 		// set new neighbor list to A+B-{to, from}
-		this.MATRIX.set(master, new ArrayList<>(newMaster));
+		this.MATRIX.set(primary, new ArrayList<>(newPrimary));
 
-		// updates neighbors' neighbors to include master(to)
-		for (int neighbor : newMaster) {
-			// remove if slave exists
-			if (this.MATRIX.get(neighbor).contains(slave)) {
+		// updates neighbors' neighbors to include primary (to)
+		for (int neighbor : newPrimary) {
+			// remove if secondary exists
+			if (this.MATRIX.get(neighbor).contains(secondary)) {
 				this.MATRIX.get(neighbor).remove(
-						this.MATRIX.get(neighbor).indexOf(slave)
+						this.MATRIX.get(neighbor).indexOf(secondary)
 				);
 			}
-			// add if master doesn't exist
-			if (!this.MATRIX.get(neighbor).contains(master)) {
-				this.MATRIX.get(neighbor).add(master);
+			// add if primary doesn't exist
+			if (!this.MATRIX.get(neighbor).contains(primary)) {
+				this.MATRIX.get(neighbor).add(primary);
 			}
 		}
 		// updates size
@@ -404,6 +430,7 @@ public class LinkedGraph implements Graph {
 			WrappedNode at = toExplore.remove();
 			int atIndex = this.NODES[at.index].getId();
 			int atDistance = at.distance;
+			// if we need are not at max depth, add the neighbours of this node to explore
 			if (atDistance < depth) {
 				List<Integer> neighbors = this.MATRIX.get(atIndex);
 				//System.out.println("Found "+neighbors.size()+" neighbors for "+atIndex+" current distance "+atDistance);

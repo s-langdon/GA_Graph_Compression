@@ -74,13 +74,15 @@ public class GAImplementation {
 	private Map<String, Integer> CACHED_CHROMOSOME_FITNESS;
 
 	/**
-	 * builds GA based on fileLocation file
+	 * Builds GA based on configuration file at fileLocation
 	 *
-	 * @param timeSuffix
-	 * @param fileLocation
+	 * @param seed seed for the random number generator, can used system time as a randomly generated seed
+	 *                or a fixed seed
+	 * @param fileLocation filepath for the configuration file which specifies the parameters to be used
+	 *                       and the input data source
 	 */
-	public GAImplementation(long timeSuffix, String fileLocation) {
-		this.SEED = timeSuffix;
+	public GAImplementation(long seed, String fileLocation) {
+		this.SEED = seed;
 		this.RANDOM = new Random(this.SEED);
 		if (!buildData(IN_DIRECTORY + fileLocation)) {
 			return;
@@ -102,7 +104,7 @@ public class GAImplementation {
 	}
 
 	/**
-	 * Runs the Genetic Algorithm
+	 * Runs the Genetic Algorithm and saves data about GA run to output file
 	 */
 	public void run() {
 		if (this.VALID) {
@@ -162,13 +164,13 @@ public class GAImplementation {
 			int[][] globalWorst = new int[CHROMOSOME_SIZE][2];
 			long globalSum = 0;
 			this.POPULATION_FITNESS = new int[this.POPULATION_SIZE];
-			// Each Run
+			// Each run
 			for (int run = 1; run <= this.RUN_SPAN; run++) {
 				initPopulation();
 
 				// Grab initial population fitness
 				for (int i = 0; i < this.POPULATION_SIZE; i++) {
-					this.POPULATION_FITNESS[i] = this.Evaluate(this.POPULATION[i]);
+					this.POPULATION_FITNESS[i] = this.evaluate(this.POPULATION[i]);
 				}
 
 				int runWorstFitness = Integer.MIN_VALUE;
@@ -177,7 +179,7 @@ public class GAImplementation {
 				int[][] runWorst = new int[CHROMOSOME_SIZE][2];
 				long runSum = 0;
 
-				// Each Generation
+				// Each generation
 				for (int gen = 1; gen <= this.GENERATION_SPAN; gen++) {
 					long startTime = System.currentTimeMillis();
 					int genBestFitness = Integer.MAX_VALUE;
@@ -189,20 +191,21 @@ public class GAImplementation {
 
 					// Elitism
 					int[][][] generation = this.getElitePopulation();
+					// Apply crossover and mutation to generate the rest of the population
 					for (int c = this.ELITE_COUNT; c < this.POPULATION_SIZE; c += 2) {
-						// Get Parents via tournament selection
-						int[][] parent1 = this.TournamentSelection();
-						int[][] parent2 = this.TournamentSelection();
-						// Apply Crossover
+						// Get parents via tournament selection
+						int[][] parent1 = this.tournamentSelection();
+						int[][] parent2 = this.tournamentSelection();
+						// Apply crossover
 						if (this.RANDOM.nextDouble() < this.CROSSOVER_RATE) {
-							this.Crossover(parent1, parent2);
+							this.crossover(parent1, parent2);
 						}
-						// Apply Mutation
+						// Apply mutation
 						if (this.RANDOM.nextDouble() < this.MUTATION_RATE) {
-							this.Mutate(parent1);
+							this.mutate(parent1);
 						}
 						if (this.RANDOM.nextDouble() < this.MUTATION_RATE) {
-							this.Mutate(parent2);
+							this.mutate(parent2);
 						}
 						// Add to generation
 						if (c + 1 == this.POPULATION_SIZE) {
@@ -215,29 +218,29 @@ public class GAImplementation {
 					}
 					// Collect fitnesses
 					for (int i = 0; i < this.POPULATION_SIZE; i++) {
-						int fitness = this.Evaluate(generation[i]);
+						int fitness = this.evaluate(generation[i]);
 						this.POPULATION_FITNESS[i] = fitness;
-						// Collect Generation, Run, Global statistics
+						// Collect generation, run, global statistics
 						if (fitness < genBestFitness) {
-							genBest = Copy(generation[i]);
+							genBest = copy(generation[i]);
 							genBestFitness = fitness;
 							if (genBestFitness < runBestFitness) {
-								runBest = Copy(genBest);
+								runBest = copy(genBest);
 								runBestFitness = genBestFitness;
 								if (runBestFitness < globalBestFitness) {
-									globalBest = Copy(runBest);
+									globalBest = copy(runBest);
 									globalBestFitness = runBestFitness;
 								}
 							}
 						}
 						if (fitness > genWorstFitness) {
-							genWorst = Copy(generation[i]);
+							genWorst = copy(generation[i]);
 							genWorstFitness = fitness;
 							if (genWorstFitness > runWorstFitness) {
-								runWorst = Copy(genWorst);
+								runWorst = copy(genWorst);
 								runWorstFitness = genWorstFitness;
 								if (runWorstFitness > globalWorstFitness) {
-									globalWorst = Copy(runWorst);
+									globalWorst = copy(runWorst);
 									globalWorstFitness = runWorstFitness;
 								}
 							}
@@ -304,20 +307,20 @@ public class GAImplementation {
 	}
 
 	/**
-	 * returns chromosome at specified index
+	 * Returns a copy of the chromosome at specified index
 	 *
-	 * @param index
-	 * @return
+	 * @param index of the chromosome within the population
+	 * @return a copy of the chromosome, null if the index is out of bounds.
 	 */
 	public int[][] getChromosome(int index) {
 		if (index >= this.POPULATION_SIZE) {
 			return null;
 		}
-		return Copy(this.POPULATION[index]);
+		return copy(this.POPULATION[index]);
 	}
 
 	/**
-	 * prints all the chromosomes
+	 * Prints all the chromosomes in the population
 	 */
 	public void print() {
 		for (int i = 0; i < this.POPULATION_SIZE; i++) {
@@ -327,26 +330,27 @@ public class GAImplementation {
 	}
 
 	/**
-	 * prints specific chromosomes
+	 * Prints the string representation of the specified chromosome
 	 *
-	 * @param chromosome
+	 * @param chromosome the chromosome to print
 	 */
 	public static void print(int[][] chromosome) {
 		System.out.print(GAImplementation.buildChromosomeString(chromosome));
 	}
 
 	/**
-	 * prints specific chromosomes with a newline at the end
+	 * Prints specific chromosomes with a newline at the end
 	 *
-	 * @param chromosome
+	 * @param chromosome the chromosome to print
 	 */
 	public static void println(int[][] chromosome) {
 		print(chromosome);
 		System.out.println();
 	}
 
-	/*
-		initializes the population with random data
+
+	/**
+	 * Initializes the population with random data
 	 */
 	private void initPopulation() {
 		if (!VALID) {
@@ -355,39 +359,39 @@ public class GAImplementation {
 		this.POPULATION = new int[this.POPULATION_SIZE][this.CHROMOSOME_SIZE][2];
 		for (int c = 0; c < this.POPULATION_SIZE; c++) {
 			for (int g = 0; g < this.CHROMOSOME_SIZE; g++) {
-				this.MutateGene(this.POPULATION[c][g]);
+				this.mutateGene(this.POPULATION[c][g]);
 			}
 		}
 	}
 
 	/**
-	 * deep copy chromosome
+	 * Deep copy chromosome
 	 *
-	 * @param pairs
-	 * @return
+	 * @param chromosome the chromosome to copy
+	 * @return a new int[][] array with a copy of the chromosome data
 	 */
-	public static int[][] Copy(int[][] pairs) {
-		int[][] returnPairs = new int[pairs.length][2];
-		for (int i = 0; i < pairs.length; i++) {
-			returnPairs[i][0] = pairs[i][0]; // root
-			returnPairs[i][1] = pairs[i][1]; // offset
+	public static int[][] copy(int[][] chromosome) {
+		int[][] returnChromosome = new int[chromosome.length][2];
+		for (int i = 0; i < chromosome.length; i++) {
+			returnChromosome[i][0] = chromosome[i][0]; // root
+			returnChromosome[i][1] = chromosome[i][1]; // offset
 		}
-		return returnPairs;
+		return returnChromosome;
 	}
 
 	/**
-	 * Gets a preset number of individual chromosomes, return the best
-	 * chromosome
+	 * Randomly selects a preset number of individual chromosomes, returns the best
+	 * chromosome of the selected set
 	 *
-	 * @return chromosome
+	 * @return the chromosome with the best fitness value of the selected set
 	 */
-	public int[][] TournamentSelection() {
+	public int[][] tournamentSelection() {
 		int best = Integer.MAX_VALUE;
 		int[][] winner = new int[this.CHROMOSOME_SIZE][2];
 		for (int i = 0; i < this.TOURNAMENT_SIZE; i++) {
 			int randomIndex = this.RANDOM.nextInt(this.POPULATION_SIZE);
 			int[][] participant = this.getChromosome(randomIndex);
-			int fitness = this.EvaluatePrevious(randomIndex);
+			int fitness = this.evaluatePrevious(randomIndex);
 			if (fitness < best) {
 				best = fitness;
 				winner = participant;
@@ -398,33 +402,40 @@ public class GAImplementation {
 	}
 
 	/**
-	 * cross over the two given chromosomes
+	 * Performs 2 point crossover on the two given chromosomes.
+	 * Order in which the chromosomes are supplied to the method is not important.
 	 *
-	 * @param pair1
-	 * @param pair2
+	 * @param chromosome1 the first chromosome involved in the crossover
+	 * @param chromosome2 the second chromosome involved in the crossover
 	 */
-	public void Crossover(int[][] pair1, int[][] pair2) {
+	public void crossover(int[][] chromosome1, int[][] chromosome2) {
 		if (!VALID) {
 			return;
 		}
 		int start = this.RANDOM.nextInt(CHROMOSOME_SIZE);
 		int end = this.RANDOM.nextInt(CHROMOSOME_SIZE - start) + start;
-		for (int i = 0; i < pair1.length; i++) {
+		for (int i = 0; i < chromosome1.length; i++) {
 			if (i >= start && i <= end) {
-				int tempRoot = pair1[i][0];
-				pair1[i][0] = pair2[i][0];
-				pair2[i][0] = tempRoot;
-				int tempOffset = pair1[i][1];
-				pair1[i][1] = pair2[i][1];
-				pair2[i][1] = tempOffset;
+				int tempRoot = chromosome1[i][0];
+				chromosome1[i][0] = chromosome2[i][0];
+				chromosome2[i][0] = tempRoot;
+				int tempOffset = chromosome1[i][1];
+				chromosome1[i][1] = chromosome2[i][1];
+				chromosome2[i][1] = tempOffset;
 			}
 		}
 	}
 
-	/*
-		This method can only be done from the original graph, not constantly changing ones such as during eval
+	/**
+	 * Replaces the supplied gene with a randomly generated new gene. This gene will be valid on
+	 * the original graph, but may not be valid as part of the resulting chromosome (since it may no
+	 * longer be valid at that point in the sequence of merges)
+	 * @param gene the gene to replace with the random mutation
+	 *
+	 * Original documentation note: "This method can only be done from the original graph, not constantly
+	 *             				     changing ones such as during eval"
 	 */
-	private void MutateGene(int[] gene) {
+	private void mutateGene(int[] gene) {
 		int randomRoot = this.RANDOM.nextInt(this.GRAPH_SIZE);
 		gene[0] = randomRoot;
 		if (this.ORIGINAL_NEIGHBORHOODS.get(randomRoot).size() < 1) {
@@ -436,25 +447,32 @@ public class GAImplementation {
 	}
 
 	/**
-	 * mutate the given chromosome
+	 * Mutate the given chromosome by randomly selecting a gene to replace with a new random gene.
 	 *
-	 * @param pairs
+	 * @param chromosome the chromosome to mutate
 	 */
-	public void Mutate(int[][] pairs) {
+	public void mutate(int[][] chromosome) {
 		if (!VALID) {
 			return;
 		}
-		int randomIndex = this.RANDOM.nextInt(pairs.length);
-		this.MutateGene(pairs[randomIndex]);
+		int randomIndex = this.RANDOM.nextInt(chromosome.length);
+		this.mutateGene(chromosome[randomIndex]);
 	}
 
+	/**
+	 * Method to check if the specified gene (merge) appears more than once in the given chromosome
+	 * (it is not possible / not helpful to do the same merge twice, so having a duplicate gene is an invalid solution)
+	 * @param chromosome the chromosome to check
+	 * @param gene the gene to search for
+	 * @return True if the gene appears more than once in the given chromosome, False otherwise
+	 */
 	private boolean duplicateGene(int[][] chromosome, int[] gene) {
 		boolean found = false;
 		for (int i = 0; i < chromosome.length; i++) {
 			if (chromosome[i][0] == gene[0] && chromosome[i][1] == gene[1]) {
 				if(found){
 					return true;
-				} else{
+				} else {
 					found = true;
 				}
 			}
@@ -463,19 +481,26 @@ public class GAImplementation {
 	}
 
 	/**
-	 * Evaluates a single gene within a chromosome
+	 * Evaluates a single gene within a chromosome by performing the merge specified by the gene.
+	 * If the gene represents an invalid merge (a duplicate merge or a merge between two nodes in the same supernode),
+	 * the gene will be replaced with a new gene representing a random valid merge (keeping the same root node
+	 * if possible).
 	 *
-	 * @param graph
-	 * @param gene
-	 * @return geneFitness
+	 * @param graph the current state of the graph to evaluate the gene/merge on
+	 * @param gene the gene to evaluate by applying the merge to the graph
 	 */
-	public void EvaluateGene(LinkedGraph graph, int[][] chromosome, int[] gene) {
+	public void evaluateGene(LinkedGraph graph, int[][] chromosome, int[] gene) {
 		int from = gene[0];
 		int to = (gene[0] + gene[1]) % this.GRAPH_SIZE;
 		int[] tempGene = new int[]{gene[0], gene[1]};
 
+		// if the gene is invalid, because it appears more than once in the chromosome
+		// or merges two nodes already in the same cluster, replace it with a new gene
 		if (duplicateGene(chromosome, tempGene) || graph.sameCluster(from, to)) {
+
 			List<Integer> possibleNeighbors = graph.bfs(from, this.DISTANCE_LIMIT);
+			// iterate through all neighbours within the distance limit of the 'from' node
+			// select the first one which represents a valid merge, if it exists
 			for (Integer neighbor : possibleNeighbors) {
 				to = neighbor;
 				tempGene[0] = from;
@@ -484,7 +509,8 @@ public class GAImplementation {
 					break;
 				}
 			}
-
+			// if no valid merges were found within the neighbourhood of the 'from' node
+			// randomly select a new 'from' node and corresponding 'to' node
 			while (duplicateGene(chromosome, tempGene) || graph.sameCluster(from, to)) {
 				from = this.RANDOM.nextInt(this.GRAPH_SIZE);
 				possibleNeighbors = graph.bfs(from, this.DISTANCE_LIMIT);
@@ -497,31 +523,36 @@ public class GAImplementation {
 				tempGene[1] = Math.floorMod(to - from, this.GRAPH_SIZE);
 			}
 		}
+		// update the gene
 		gene[0] = from;
 		gene[1] = Math.floorMod(to - from, this.GRAPH_SIZE);
+		// apply the merge specified by the gene to the graph
 		graph.merge(from, to);
 	}
 
 	/**
-	 * fitness function. updates chromosome if chromosome has some invalid
-	 * genes.
+	 * Fitness function. Evaluates the number of fake links created as a result of the merge-sequence specified by the
+	 * chromosome. Updates chromosome if it has some invalid genes (these are randomly replaced with new, valid genes).
 	 *
-	 * @param chromosome
-	 * @return
+	 * @param chromosome The chromosome to evaluate
+	 * @return The fitness of the chromosome
 	 */
-	public int Evaluate(int[][] chromosome) {
+	public int evaluate(int[][] chromosome) {
 		String chromosomeString = buildChromosomeString(chromosome);
 		if (this.CACHED_CHROMOSOME_FITNESS.containsKey(chromosomeString)) {
 			return this.CACHED_CHROMOSOME_FITNESS.get(chromosomeString);
 		}
 
 		LinkedGraph current = (LinkedGraph) this.ORIGINAL_GRAPH.deepCopy();
-		// iterate through each gene
+		// iterate through each gene, applying the changes to the graph
 		for (int i = 0; i < chromosome.length; i++) {
-			this.EvaluateGene((LinkedGraph) current, chromosome, chromosome[i]);
+			this.evaluateGene(current, chromosome, chromosome[i]);
 		}
-
+		// determine the number of fake links introduced into the graph as a result
 		int fitness = current.totalFakeLinks();
+
+		// re-build the string representing the chromosome, may have been altered
+		// during the evaluation process to remove invalid merges
 		String currentChromosomeString = buildChromosomeString(chromosome);
 		this.CACHED_CHROMOSOME_FITNESS.put(currentChromosomeString, fitness);
 
@@ -529,26 +560,27 @@ public class GAImplementation {
 	}
 
 	/**
-	 * returns the fitness from the previous generation
+	 * Returns the fitness from the previous generation
 	 *
-	 * @param chromosome
-	 * @return
+	 * @param chromosome the index of the chromosome in the population
+	 * @return the fitness of the chromosome, as evaluated in the previous generation
 	 */
-	public int EvaluatePrevious(int chromosome) {
+	public int evaluatePrevious(int chromosome) {
 		// wrapper function primarily for sanity
 		return this.POPULATION_FITNESS[chromosome];
 	}
 
 	/**
-	 * returns a preset number of elites from the previous generation
+	 * Creates a new population and pre-populates it with the specified number of elites from the previous generation.
 	 *
-	 * @return newPopulation
+	 * @return newPopulation, an integer array with the first ELITE_COUNT positions holding the best chromosomes
+	 * from the last generation, the rest of the positions remaining empty
 	 */
 	public int[][][] getElitePopulation() {
 		int[][][] newPop = new int[this.POPULATION_SIZE][this.CHROMOSOME_SIZE][2];
 		PriorityQueue<WrappedNode> fitness = new PriorityQueue<WrappedNode>();
 		for (int i = 0; i < this.POPULATION_SIZE; i++) {
-			fitness.add(new WrappedNode(i, EvaluatePrevious(i)));
+			fitness.add(new WrappedNode(i, evaluatePrevious(i)));
 		}
 		for (int e = 0; e < this.ELITE_COUNT; e++) {
 			//System.out.println(fitness.size());
@@ -559,8 +591,9 @@ public class GAImplementation {
 	}
 
 	// DEFAULTS AND DATA VALIDATION
-	/*
-	Apply default values to the parameters
+
+	/**
+	 * Sets all parameters to their default values.
 	 */
 	private void buildDefaults() {
 		this.OUTPUT_FILENAME = DEFAULT_OUTPUT;
@@ -579,7 +612,11 @@ public class GAImplementation {
 		this.RUN_SPAN = 1;
 	}
 
-	// validates if properly built
+	/**
+	 * Checks that the parameters set through the provided configuration are valid (fall within allowable ranges etc).
+	 * Sets the "VALID" variable accordingly.
+	 * @return True if the parameters are valid, False otherwise.
+	 */
 	private boolean isProperlyBuilt() {
 		this.VALID = true;
 		if (this.OUTPUT_FILENAME.equals(DEFAULT_OUTPUT)) {
@@ -674,8 +711,11 @@ public class GAImplementation {
 		return this.VALID;
 	}
 
-	/*
-		retrieves data for the GA from the given data file
+	/**
+	 * Reads configuration file and sets GA parameters, inputs, and outputs accordingly.
+	 * Runs a check to ensure the specified configuration is valid.
+	 * @param filename the path of the configuration file
+	 * @return True if the configuration is valid, False otherwise
 	 */
 	private boolean buildData(String filename) {
 		buildDefaults();
@@ -749,7 +789,7 @@ public class GAImplementation {
 	}
 
 	/**
-	 * returns string representation of chromosome
+	 * Returns string representation of chromosome
 	 *
 	 * @param chromosome
 	 * @return
@@ -773,7 +813,14 @@ public class GAImplementation {
 		return output;
 	}
 
-	public static LinkedGraph BuildChromosome(LinkedGraph testGraph, String chromosome) {
+	/**
+	 * Builds a graph which has been compressed by applying the sequence of merges specified in the chromosome,
+	 * using the supplied testGraph as the original starting graph.
+	 * @param testGraph initial graph to compress using the chromosome
+	 * @param chromosome string representation of a chromosome specifying the sequence of merges to make within the graph
+	 * @return a new graph which has been compressed using the chromosome
+	 */
+	public static LinkedGraph buildChromosome(LinkedGraph testGraph, String chromosome) {
 		LinkedGraph graph = testGraph.deepCopy();
 		chromosome = chromosome.replaceAll("\\]", "");
 		chromosome = chromosome.replaceAll("\\[", "");
@@ -793,21 +840,19 @@ public class GAImplementation {
 	}
 
 	/**
-	 * shows step by step fitness evaluation of chromosome
+	 * Shows step by step fitness evaluation of chromosome
 	 *
 	 * @param testGraph
 	 * @param chromosome
 	 */
-	public static void ViewChromosome(LinkedGraph testGraph, String chromosome) {
-		LinkedGraph graph = BuildChromosome(testGraph, chromosome);
+	public static void viewChromosome(LinkedGraph testGraph, String chromosome) {
+		LinkedGraph graph = buildChromosome(testGraph, chromosome);
 		System.out.println("Should be " + graph.totalFakeLinks() + " fitness");
-		PrintChromosome(graph);
-
+		printChromosome(graph);
 	}
 
-	public static void PrintChromosome(LinkedGraph g) {
+	public static void printChromosome(LinkedGraph g) {
 		g.print();
 		GraphDisplay.displayLinkedGraph(g);
-//		
 	}
 }

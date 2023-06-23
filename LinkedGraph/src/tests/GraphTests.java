@@ -6,7 +6,6 @@
 package tests;
 
 import ga.GAImplementation;
-import java.util.Random;
 import linkedgraph.*;
 
 /**
@@ -99,7 +98,7 @@ public class GraphTests {
             LinkedGraph graph = LinkedGraph.load(fakeEdgeTests[i][0]);
             int expectedFakeLinks = Integer.valueOf(fakeEdgeTests[i][1]);
             String chromosome = fakeEdgeTests[i][2];
-            LinkedGraph result = GAImplementation.BuildChromosome(graph, chromosome);
+            LinkedGraph result = GAImplementation.buildChromosome(graph, chromosome);
 
             int actualFakeLinks = result.totalFakeLinks();
 
@@ -135,7 +134,7 @@ public class GraphTests {
             String expectedResult = null;
             for (int comparisonIndex = 1; comparisonIndex < comparisonTests[testIndex].length; comparisonIndex++) {
 
-                LinkedGraph result = GAImplementation.BuildChromosome(graph, comparisonTests[testIndex][comparisonIndex]);
+                LinkedGraph result = GAImplementation.buildChromosome(graph, comparisonTests[testIndex][comparisonIndex]);
                 String actualResult = result.toString();
                 if (expectedResult == null) {
                     expectedResult = actualResult;

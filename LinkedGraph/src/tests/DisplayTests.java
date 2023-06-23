@@ -38,7 +38,7 @@ public class DisplayTests {
         String test_3 = "[(0,2)]"; //1
         String test_4 = "[(0,2),(1,1)]"; // 2
 
-        GAImplementation.ViewChromosome(sample2, sample2_3);
+        GAImplementation.viewChromosome(sample2, sample2_3);
 
     }
 }

@@ -1,5 +1,8 @@
 package linkedgraph;
 
+/**
+ * A wrapper class for the Node class for use in BFS, shortest path calculations.
+ */
 public class WrappedNode implements Comparable<WrappedNode>{
     public int index;
     public int distance;
