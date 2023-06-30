@@ -58,19 +58,21 @@ public class GAImplementation {
 	private Random RANDOM;
 	private boolean VALID;
 	private BufferedWriter OUTPUT;
+	private String CHROMOSOME_TYPE = "";
 
 	private final String DEFAULT_OUTPUT = "";
 	private final float DEFAULT_RATE = -Float.MAX_VALUE;
 	private final int DEFAULT_SIZE = Integer.MIN_VALUE;
 
 	private Graph ORIGINAL_GRAPH;
-	private int[][][] POPULATION;
+//	private int[][][] POPULATION;
+	private Chromosome[] POPULATION;
 	private int[] POPULATION_FITNESS;
 
 	private static final String IN_DIRECTORY = "data/in/";
 	private static final String OUT_DIRECTORY = "data/out/";
 
-	private List<List<Integer>> ORIGINAL_NEIGHBORHOODS;
+//	private List<List<Integer>> ORIGINAL_NEIGHBORHOODS;
 	private Map<String, Integer> CACHED_CHROMOSOME_FITNESS;
 
 	/**
@@ -151,17 +153,21 @@ public class GAImplementation {
 			} catch (Exception e) {
 				System.out.println("Unable to write to file: " + e.getMessage());
 			}
-			this.ORIGINAL_NEIGHBORHOODS = new LinkedList<>();
+
+//			this.ORIGINAL_NEIGHBORHOODS = new LinkedList<>();
+
 			this.CACHED_CHROMOSOME_FITNESS = new HashMap<>();
 
-			for (int i = 0; i < this.GRAPH_SIZE; i++) {
-				this.ORIGINAL_NEIGHBORHOODS.add(new LinkedList<Integer>());
-			}
+//			for (int i = 0; i < this.GRAPH_SIZE; i++) {
+//				this.ORIGINAL_NEIGHBORHOODS.add(new LinkedList<Integer>());
+//			}
+
+
 			// initialize global settings
 			int globalWorstFitness = Integer.MIN_VALUE;
 			int globalBestFitness = Integer.MAX_VALUE;
-			int[][] globalBest = new int[CHROMOSOME_SIZE][2];
-			int[][] globalWorst = new int[CHROMOSOME_SIZE][2];
+			Chromosome globalBest = createChromosome();
+			Chromosome globalWorst = createChromosome();
 			long globalSum = 0;
 			this.POPULATION_FITNESS = new int[this.POPULATION_SIZE];
 			// Each run
@@ -175,41 +181,41 @@ public class GAImplementation {
 
 				int runWorstFitness = Integer.MIN_VALUE;
 				int runBestFitness = Integer.MAX_VALUE;
-				int[][] runBest = new int[CHROMOSOME_SIZE][2];
-				int[][] runWorst = new int[CHROMOSOME_SIZE][2];
+				Chromosome runBest = createChromosome();
+				Chromosome runWorst = createChromosome();
 				long runSum = 0;
 
 				// Each generation
 				for (int gen = 1; gen <= this.GENERATION_SPAN; gen++) {
 					long startTime = System.currentTimeMillis();
 					int genBestFitness = Integer.MAX_VALUE;
-					int[][] genBest = new int[CHROMOSOME_SIZE][2];
+					Chromosome genBest = createChromosome();
 					int genWorstFitness = Integer.MIN_VALUE;
-					int[][] genWorst = new int[CHROMOSOME_SIZE][2];
+					Chromosome genWorst = createChromosome();
 					long genSum = 0;
 					System.out.println("Thread " + Thread.currentThread().getId() + " Run " + run + " Generation " + gen);
 
 					// Elitism
-					int[][][] generation = this.getElitePopulation();
+					Chromosome[] generation = this.getElitePopulation();
 					// Apply crossover and mutation to generate the rest of the population
 					for (int c = this.ELITE_COUNT; c < this.POPULATION_SIZE; c += 2) {
 						// Get parents via tournament selection
-						int[][] parent1 = this.tournamentSelection();
-						int[][] parent2 = this.tournamentSelection();
+						Chromosome parent1 = this.tournamentSelection();
+						Chromosome parent2 = this.tournamentSelection();
 						// Apply crossover
 						if (this.RANDOM.nextDouble() < this.CROSSOVER_RATE) {
 							this.crossover(parent1, parent2);
 						}
 						// Apply mutation
 						if (this.RANDOM.nextDouble() < this.MUTATION_RATE) {
-							this.mutate(parent1);
+							parent1.mutate((LinkedGraph) this.ORIGINAL_GRAPH);
 						}
 						if (this.RANDOM.nextDouble() < this.MUTATION_RATE) {
-							this.mutate(parent2);
+							parent2.mutate((LinkedGraph) this.ORIGINAL_GRAPH);
 						}
 						// Add to generation
 						if (c + 1 == this.POPULATION_SIZE) {
-							int[][] randomParent = this.RANDOM.nextBoolean() ? parent1 : parent2;
+							Chromosome randomParent = this.RANDOM.nextBoolean() ? parent1 : parent2;
 							generation[c] = randomParent;
 						} else {
 							generation[c] = parent1;
@@ -222,25 +228,25 @@ public class GAImplementation {
 						this.POPULATION_FITNESS[i] = fitness;
 						// Collect generation, run, global statistics
 						if (fitness < genBestFitness) {
-							genBest = copy(generation[i]);
+							genBest = generation[i].copy();
 							genBestFitness = fitness;
 							if (genBestFitness < runBestFitness) {
-								runBest = copy(genBest);
+								runBest = genBest.copy();
 								runBestFitness = genBestFitness;
 								if (runBestFitness < globalBestFitness) {
-									globalBest = copy(runBest);
+									globalBest = runBest.copy();
 									globalBestFitness = runBestFitness;
 								}
 							}
 						}
 						if (fitness > genWorstFitness) {
-							genWorst = copy(generation[i]);
+							genWorst = generation[i].copy();
 							genWorstFitness = fitness;
 							if (genWorstFitness > runWorstFitness) {
-								runWorst = copy(genWorst);
+								runWorst = genWorst.copy();
 								runWorstFitness = genWorstFitness;
 								if (runWorstFitness > globalWorstFitness) {
-									globalWorst = copy(runWorst);
+									globalWorst = runWorst.copy();
 									globalWorstFitness = runWorstFitness;
 								}
 							}
@@ -279,9 +285,9 @@ public class GAImplementation {
 								+ genBestFitness + ","
 								+ (genSum / this.POPULATION_SIZE) + ","
 								+ genWorstFitness + ","
-								+ "\"" + GAImplementation.buildChromosomeString(globalBest) + "\","
-								+ "\"" + GAImplementation.buildChromosomeString(runBest) + "\","
-								+ "\"" + GAImplementation.buildChromosomeString(genBest) + "\","
+								+ "\"" + globalBest.toString() + "\","
+								+ "\"" + runBest.toString() + "\","
+								+ "\"" + genBest.toString() + "\","
 						);
 						this.OUTPUT.newLine();
 						this.OUTPUT.flush();
@@ -312,22 +318,22 @@ public class GAImplementation {
 	 * @param index of the chromosome within the population
 	 * @return a copy of the chromosome, null if the index is out of bounds.
 	 */
-	public int[][] getChromosome(int index) {
+	public Chromosome getChromosome(int index) {
 		if (index >= this.POPULATION_SIZE) {
 			return null;
 		}
-		return copy(this.POPULATION[index]);
+		return (this.POPULATION[index].copy());
 	}
 
-	/**
-	 * Prints all the chromosomes in the population
-	 */
-	public void print() {
-		for (int i = 0; i < this.POPULATION_SIZE; i++) {
-			System.out.print("Chromosome " + i + " ");
-			println(this.POPULATION[i]);
-		}
-	}
+//	/**
+//	 * Prints all the chromosomes in the population
+//	 */
+//	public void print() {
+//		for (int i = 0; i < this.POPULATION_SIZE; i++) {
+//			System.out.print("Chromosome " + i + " ");
+//			println(this.POPULATION[i]);
+//		}
+//	}
 
 	/**
 	 * Prints the string representation of the specified chromosome
@@ -356,28 +362,27 @@ public class GAImplementation {
 		if (!VALID) {
 			return;
 		}
-		this.POPULATION = new int[this.POPULATION_SIZE][this.CHROMOSOME_SIZE][2];
+		this.POPULATION = new Chromosome[this.POPULATION_SIZE];
 		for (int c = 0; c < this.POPULATION_SIZE; c++) {
-			for (int g = 0; g < this.CHROMOSOME_SIZE; g++) {
-				this.mutateGene(this.POPULATION[c][g]);
-			}
+			this.POPULATION[c] = createChromosome();
+			this.POPULATION[c].init((LinkedGraph) this.ORIGINAL_GRAPH);
 		}
 	}
 
-	/**
-	 * Deep copy chromosome
-	 *
-	 * @param chromosome the chromosome to copy
-	 * @return a new int[][] array with a copy of the chromosome data
-	 */
-	public static int[][] copy(int[][] chromosome) {
-		int[][] returnChromosome = new int[chromosome.length][2];
-		for (int i = 0; i < chromosome.length; i++) {
-			returnChromosome[i][0] = chromosome[i][0]; // root
-			returnChromosome[i][1] = chromosome[i][1]; // offset
-		}
-		return returnChromosome;
-	}
+//	/**
+//	 * Deep copy chromosome
+//	 *
+//	 * @param chromosome the chromosome to copy
+//	 * @return a new int[][] array with a copy of the chromosome data
+//	 */
+//	public static int[][] copy(int[][] chromosome) {
+//		int[][] returnChromosome = new int[chromosome.length][2];
+//		for (int i = 0; i < chromosome.length; i++) {
+//			returnChromosome[i][0] = chromosome[i][0]; // root
+//			returnChromosome[i][1] = chromosome[i][1]; // offset
+//		}
+//		return returnChromosome;
+//	}
 
 	/**
 	 * Randomly selects a preset number of individual chromosomes, returns the best
@@ -385,12 +390,12 @@ public class GAImplementation {
 	 *
 	 * @return the chromosome with the best fitness value of the selected set
 	 */
-	public int[][] tournamentSelection() {
+	public Chromosome tournamentSelection() {
 		int best = Integer.MAX_VALUE;
-		int[][] winner = new int[this.CHROMOSOME_SIZE][2];
+		Chromosome winner = createChromosome();
 		for (int i = 0; i < this.TOURNAMENT_SIZE; i++) {
 			int randomIndex = this.RANDOM.nextInt(this.POPULATION_SIZE);
-			int[][] participant = this.getChromosome(randomIndex);
+			Chromosome participant = this.getChromosome(randomIndex);
 			int fitness = this.evaluatePrevious(randomIndex);
 			if (fitness < best) {
 				best = fitness;
@@ -408,127 +413,127 @@ public class GAImplementation {
 	 * @param chromosome1 the first chromosome involved in the crossover
 	 * @param chromosome2 the second chromosome involved in the crossover
 	 */
-	public void crossover(int[][] chromosome1, int[][] chromosome2) {
+	public void crossover(Chromosome chromosome1, Chromosome chromosome2) {
 		if (!VALID) {
 			return;
 		}
 		int start = this.RANDOM.nextInt(CHROMOSOME_SIZE);
 		int end = this.RANDOM.nextInt(CHROMOSOME_SIZE - start) + start;
-		for (int i = 0; i < chromosome1.length; i++) {
+		for (int i = 0; i < this.CHROMOSOME_SIZE; i++) {
 			if (i >= start && i <= end) {
-				int tempRoot = chromosome1[i][0];
-				chromosome1[i][0] = chromosome2[i][0];
-				chromosome2[i][0] = tempRoot;
-				int tempOffset = chromosome1[i][1];
-				chromosome1[i][1] = chromosome2[i][1];
-				chromosome2[i][1] = tempOffset;
+				int tempRoot = chromosome1.genes[i][0];
+				chromosome1.genes[i][0] = chromosome2.genes[i][0];
+				chromosome2.genes[i][0] = tempRoot;
+				int tempOffset = chromosome1.genes[i][1];
+				chromosome1.genes[i][1] = chromosome2.genes[i][1];
+				chromosome2.genes[i][1] = tempOffset;
 			}
 		}
 	}
 
-	/**
-	 * Replaces the supplied gene with a randomly generated new gene. This gene will be valid on
-	 * the original graph, but may not be valid as part of the resulting chromosome (since it may no
-	 * longer be valid at that point in the sequence of merges)
-	 * @param gene the gene to replace with the random mutation
-	 *
-	 * Original documentation note: "This method can only be done from the original graph, not constantly
-	 *             				     changing ones such as during eval"
-	 */
-	private void mutateGene(int[] gene) {
-		int randomRoot = this.RANDOM.nextInt(this.GRAPH_SIZE);
-		gene[0] = randomRoot;
-		if (this.ORIGINAL_NEIGHBORHOODS.get(randomRoot).size() < 1) {
-			this.ORIGINAL_NEIGHBORHOODS.get(randomRoot).addAll(this.ORIGINAL_GRAPH.bfs(randomRoot, this.DISTANCE_LIMIT));
-		}
-		int randomNeighbor = this.ORIGINAL_NEIGHBORHOODS.get(randomRoot).get(this.RANDOM.nextInt(this.ORIGINAL_NEIGHBORHOODS.get(randomRoot).size()));
-		int randomOffset = Math.floorMod(randomNeighbor - randomRoot, this.GRAPH_SIZE);
-		gene[1] = randomOffset;
-	}
+//	/**
+//	 * Replaces the supplied gene with a randomly generated new gene. This gene will be valid on
+//	 * the original graph, but may not be valid as part of the resulting chromosome (since it may no
+//	 * longer be valid at that point in the sequence of merges)
+//	 * @param gene the gene to replace with the random mutation
+//	 *
+//	 * Original documentation note: "This method can only be done from the original graph, not constantly
+//	 *             				     changing ones such as during eval"
+//	 */
+//	private void mutateGene(int[] gene) {
+//		int randomRoot = this.RANDOM.nextInt(this.GRAPH_SIZE);
+//		gene[0] = randomRoot;
+//		if (this.ORIGINAL_NEIGHBORHOODS.get(randomRoot).size() < 1) {
+//			this.ORIGINAL_NEIGHBORHOODS.get(randomRoot).addAll(this.ORIGINAL_GRAPH.bfs(randomRoot, this.DISTANCE_LIMIT));
+//		}
+//		int randomNeighbor = this.ORIGINAL_NEIGHBORHOODS.get(randomRoot).get(this.RANDOM.nextInt(this.ORIGINAL_NEIGHBORHOODS.get(randomRoot).size()));
+//		int randomOffset = Math.floorMod(randomNeighbor - randomRoot, this.GRAPH_SIZE);
+//		gene[1] = randomOffset;
+//	}
 
-	/**
-	 * Mutate the given chromosome by randomly selecting a gene to replace with a new random gene.
-	 *
-	 * @param chromosome the chromosome to mutate
-	 */
-	public void mutate(int[][] chromosome) {
-		if (!VALID) {
-			return;
-		}
-		int randomIndex = this.RANDOM.nextInt(chromosome.length);
-		this.mutateGene(chromosome[randomIndex]);
-	}
+//	/**
+//	 * Mutate the given chromosome by randomly selecting a gene to replace with a new random gene.
+//	 *
+//	 * @param chromosome the chromosome to mutate
+//	 */
+//	public void mutate(int[][] chromosome) {
+//		if (!VALID) {
+//			return;
+//		}
+//		int randomIndex = this.RANDOM.nextInt(chromosome.length);
+//		this.mutateGene(chromosome[randomIndex]);
+//	}
 
-	/**
-	 * Method to check if the specified gene (merge) appears more than once in the given chromosome
-	 * (it is not possible / not helpful to do the same merge twice, so having a duplicate gene is an invalid solution)
-	 * @param chromosome the chromosome to check
-	 * @param gene the gene to search for
-	 * @return True if the gene appears more than once in the given chromosome, False otherwise
-	 */
-	private boolean duplicateGene(int[][] chromosome, int[] gene) {
-		boolean found = false;
-		for (int i = 0; i < chromosome.length; i++) {
-			if (chromosome[i][0] == gene[0] && chromosome[i][1] == gene[1]) {
-				if(found){
-					return true;
-				} else {
-					found = true;
-				}
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * Evaluates a single gene within a chromosome by performing the merge specified by the gene.
-	 * If the gene represents an invalid merge (a duplicate merge or a merge between two nodes in the same supernode),
-	 * the gene will be replaced with a new gene representing a random valid merge (keeping the same root node
-	 * if possible).
-	 *
-	 * @param graph the current state of the graph to evaluate the gene/merge on
-	 * @param gene the gene to evaluate by applying the merge to the graph
-	 */
-	public void evaluateGene(LinkedGraph graph, int[][] chromosome, int[] gene) {
-		int from = gene[0];
-		int to = (gene[0] + gene[1]) % this.GRAPH_SIZE;
-		int[] tempGene = new int[]{gene[0], gene[1]};
-
-		// if the gene is invalid, because it appears more than once in the chromosome
-		// or merges two nodes already in the same cluster, replace it with a new gene
-		if (duplicateGene(chromosome, tempGene) || graph.sameCluster(from, to)) {
-
-			List<Integer> possibleNeighbors = graph.bfs(from, this.DISTANCE_LIMIT);
-			// iterate through all neighbours within the distance limit of the 'from' node
-			// select the first one which represents a valid merge, if it exists
-			for (Integer neighbor : possibleNeighbors) {
-				to = neighbor;
-				tempGene[0] = from;
-				tempGene[1] = Math.floorMod(to - from, this.GRAPH_SIZE);
-				if (!graph.sameCluster(from, to) && !duplicateGene(chromosome, tempGene)) {
-					break;
-				}
-			}
-			// if no valid merges were found within the neighbourhood of the 'from' node
-			// randomly select a new 'from' node and corresponding 'to' node
-			while (duplicateGene(chromosome, tempGene) || graph.sameCluster(from, to)) {
-				from = this.RANDOM.nextInt(this.GRAPH_SIZE);
-				possibleNeighbors = graph.bfs(from, this.DISTANCE_LIMIT);
-				if (possibleNeighbors.size() < 1) {
-					continue;
-				}
-				to = possibleNeighbors.get(this.RANDOM.nextInt(possibleNeighbors.size()));
-
-				tempGene[0] = from;
-				tempGene[1] = Math.floorMod(to - from, this.GRAPH_SIZE);
-			}
-		}
-		// update the gene
-		gene[0] = from;
-		gene[1] = Math.floorMod(to - from, this.GRAPH_SIZE);
-		// apply the merge specified by the gene to the graph
-		graph.merge(from, to);
-	}
+//	/**
+//	 * Method to check if the specified gene (merge) appears more than once in the given chromosome
+//	 * (it is not possible / not helpful to do the same merge twice, so having a duplicate gene is an invalid solution)
+//	 * @param chromosome the chromosome to check
+//	 * @param gene the gene to search for
+//	 * @return True if the gene appears more than once in the given chromosome, False otherwise
+//	 */
+//	private boolean duplicateGene(int[][] chromosome, int[] gene) {
+//		boolean found = false;
+//		for (int i = 0; i < chromosome.length; i++) {
+//			if (chromosome[i][0] == gene[0] && chromosome[i][1] == gene[1]) {
+//				if(found){
+//					return true;
+//				} else {
+//					found = true;
+//				}
+//			}
+//		}
+//		return false;
+//	}
+//
+//	/**
+//	 * Evaluates a single gene within a chromosome by performing the merge specified by the gene.
+//	 * If the gene represents an invalid merge (a duplicate merge or a merge between two nodes in the same supernode),
+//	 * the gene will be replaced with a new gene representing a random valid merge (keeping the same root node
+//	 * if possible).
+//	 *
+//	 * @param graph the current state of the graph to evaluate the gene/merge on
+//	 * @param gene the gene to evaluate by applying the merge to the graph
+//	 */
+//	public void evaluateGene(LinkedGraph graph, int[][] chromosome, int[] gene) {
+//		int from = gene[0];
+//		int to = (gene[0] + gene[1]) % this.GRAPH_SIZE;
+//		int[] tempGene = new int[]{gene[0], gene[1]};
+//
+//		// if the gene is invalid, because it appears more than once in the chromosome
+//		// or merges two nodes already in the same cluster, replace it with a new gene
+//		if (duplicateGene(chromosome, tempGene) || graph.sameCluster(from, to)) {
+//
+//			List<Integer> possibleNeighbors = graph.bfs(from, this.DISTANCE_LIMIT);
+//			// iterate through all neighbours within the distance limit of the 'from' node
+//			// select the first one which represents a valid merge, if it exists
+//			for (Integer neighbor : possibleNeighbors) {
+//				to = neighbor;
+//				tempGene[0] = from;
+//				tempGene[1] = Math.floorMod(to - from, this.GRAPH_SIZE);
+//				if (!graph.sameCluster(from, to) && !duplicateGene(chromosome, tempGene)) {
+//					break;
+//				}
+//			}
+//			// if no valid merges were found within the neighbourhood of the 'from' node
+//			// randomly select a new 'from' node and corresponding 'to' node
+//			while (duplicateGene(chromosome, tempGene) || graph.sameCluster(from, to)) {
+//				from = this.RANDOM.nextInt(this.GRAPH_SIZE);
+//				possibleNeighbors = graph.bfs(from, this.DISTANCE_LIMIT);
+//				if (possibleNeighbors.size() < 1) {
+//					continue;
+//				}
+//				to = possibleNeighbors.get(this.RANDOM.nextInt(possibleNeighbors.size()));
+//
+//				tempGene[0] = from;
+//				tempGene[1] = Math.floorMod(to - from, this.GRAPH_SIZE);
+//			}
+//		}
+//		// update the gene
+//		gene[0] = from;
+//		gene[1] = Math.floorMod(to - from, this.GRAPH_SIZE);
+//		// apply the merge specified by the gene to the graph
+//		graph.merge(from, to);
+//	}
 
 	/**
 	 * Fitness function. Evaluates the number of fake links created as a result of the merge-sequence specified by the
@@ -537,23 +542,26 @@ public class GAImplementation {
 	 * @param chromosome The chromosome to evaluate
 	 * @return The fitness of the chromosome
 	 */
-	public int evaluate(int[][] chromosome) {
-		String chromosomeString = buildChromosomeString(chromosome);
+	public int evaluate(Chromosome chromosome) {
+		String chromosomeString = chromosome.toString();
 		if (this.CACHED_CHROMOSOME_FITNESS.containsKey(chromosomeString)) {
 			return this.CACHED_CHROMOSOME_FITNESS.get(chromosomeString);
 		}
 
 		LinkedGraph current = (LinkedGraph) this.ORIGINAL_GRAPH.deepCopy();
 		// iterate through each gene, applying the changes to the graph
-		for (int i = 0; i < chromosome.length; i++) {
-			this.evaluateGene(current, chromosome, chromosome[i]);
+		for (int i = 0; i < this.CHROMOSOME_SIZE; i++) {
+			chromosome.validateGene(i, current);
+			chromosome.applyGene(i, current);
 		}
+
 		// determine the number of fake links introduced into the graph as a result
 		int fitness = current.totalFakeLinks();
+		chromosome.fitness = fitness;
 
 		// re-build the string representing the chromosome, may have been altered
 		// during the evaluation process to remove invalid merges
-		String currentChromosomeString = buildChromosomeString(chromosome);
+		String currentChromosomeString = chromosome.toString();
 		this.CACHED_CHROMOSOME_FITNESS.put(currentChromosomeString, fitness);
 
 		return fitness;
@@ -576,8 +584,8 @@ public class GAImplementation {
 	 * @return newPopulation, an integer array with the first ELITE_COUNT positions holding the best chromosomes
 	 * from the last generation, the rest of the positions remaining empty
 	 */
-	public int[][][] getElitePopulation() {
-		int[][][] newPop = new int[this.POPULATION_SIZE][this.CHROMOSOME_SIZE][2];
+	public Chromosome[] getElitePopulation() {
+		Chromosome[] newPop = new Chromosome[this.POPULATION_SIZE];
 		PriorityQueue<WrappedNode> fitness = new PriorityQueue<WrappedNode>();
 		for (int i = 0; i < this.POPULATION_SIZE; i++) {
 			fitness.add(new WrappedNode(i, evaluatePrevious(i)));
@@ -588,6 +596,21 @@ public class GAImplementation {
 			newPop[e] = this.getChromosome(elite.index);
 		}
 		return newPop;
+	}
+
+
+	/**
+	 * Creates a Chromosome of the correct concrete type based on the CHROMOSOME_TYPE parameter and the other specified
+	 * constant parameters.
+	 * @return a new Chromosome object
+	 */
+	public Chromosome createChromosome(){
+		switch (this.CHROMOSOME_TYPE) {
+			case "BFS":
+				return new BFSChromosome(this.RANDOM, this.CHROMOSOME_SIZE, this.DISTANCE_LIMIT);
+			default:
+				return new BFSChromosome(this.RANDOM, this.CHROMOSOME_SIZE, this.DISTANCE_LIMIT);
+		}
 	}
 
 	// DEFAULTS AND DATA VALIDATION
