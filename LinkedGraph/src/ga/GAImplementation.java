@@ -32,6 +32,7 @@ mutation 1.0
 chromosome 10
 runs 10
 source ecoli.txt
+type BFS
 
  */
 /**
@@ -65,14 +66,12 @@ public class GAImplementation {
 	private final int DEFAULT_SIZE = Integer.MIN_VALUE;
 
 	private Graph ORIGINAL_GRAPH;
-//	private int[][][] POPULATION;
 	private Chromosome[] POPULATION;
 	private int[] POPULATION_FITNESS;
 
 	private static final String IN_DIRECTORY = "data/in/";
 	private static final String OUT_DIRECTORY = "data/out/";
 
-//	private List<List<Integer>> ORIGINAL_NEIGHBORHOODS;
 	private Map<String, Integer> CACHED_CHROMOSOME_FITNESS;
 
 	/**
@@ -101,6 +100,8 @@ public class GAImplementation {
 		this.OUTPUT_FILENAME += "_run" + this.RUN_SPAN;
 		// generation span
 		this.OUTPUT_FILENAME += "_gen" + this.GENERATION_SPAN;
+		// chromosome type
+		this.OUTPUT_FILENAME += "_type" + this.CHROMOSOME_TYPE;
 		// seed suffix
 		this.OUTPUT_FILENAME += "_" + this.SEED + ".csv";
 	}
@@ -119,6 +120,7 @@ public class GAImplementation {
 			try {
 				// CSV Columns
 				this.OUTPUT.write("Source,"
+						+ "Type,"
 						+ "Seed,"
 						+ "Graph Size,"
 						+ "Population Size,"
@@ -154,14 +156,7 @@ public class GAImplementation {
 				System.out.println("Unable to write to file: " + e.getMessage());
 			}
 
-//			this.ORIGINAL_NEIGHBORHOODS = new LinkedList<>();
-
 			this.CACHED_CHROMOSOME_FITNESS = new HashMap<>();
-
-//			for (int i = 0; i < this.GRAPH_SIZE; i++) {
-//				this.ORIGINAL_NEIGHBORHOODS.add(new LinkedList<Integer>());
-//			}
-
 
 			// initialize global settings
 			int globalWorstFitness = Integer.MIN_VALUE;
@@ -260,6 +255,7 @@ public class GAImplementation {
 					// Output the results
 					try {
 						this.OUTPUT.write(this.SOURCE_FILENAME + ","
+								+ this.CHROMOSOME_TYPE + ","
 								+ this.SEED + ","
 								+ this.GRAPH_SIZE + ","
 								+ this.POPULATION_SIZE + ","
@@ -325,16 +321,6 @@ public class GAImplementation {
 		return (this.POPULATION[index].copy());
 	}
 
-//	/**
-//	 * Prints all the chromosomes in the population
-//	 */
-//	public void print() {
-//		for (int i = 0; i < this.POPULATION_SIZE; i++) {
-//			System.out.print("Chromosome " + i + " ");
-//			println(this.POPULATION[i]);
-//		}
-//	}
-
 	/**
 	 * Prints the string representation of the specified chromosome
 	 *
@@ -368,21 +354,6 @@ public class GAImplementation {
 			this.POPULATION[c].init((LinkedGraph) this.ORIGINAL_GRAPH);
 		}
 	}
-
-//	/**
-//	 * Deep copy chromosome
-//	 *
-//	 * @param chromosome the chromosome to copy
-//	 * @return a new int[][] array with a copy of the chromosome data
-//	 */
-//	public static int[][] copy(int[][] chromosome) {
-//		int[][] returnChromosome = new int[chromosome.length][2];
-//		for (int i = 0; i < chromosome.length; i++) {
-//			returnChromosome[i][0] = chromosome[i][0]; // root
-//			returnChromosome[i][1] = chromosome[i][1]; // offset
-//		}
-//		return returnChromosome;
-//	}
 
 	/**
 	 * Randomly selects a preset number of individual chromosomes, returns the best
@@ -430,110 +401,6 @@ public class GAImplementation {
 			}
 		}
 	}
-
-//	/**
-//	 * Replaces the supplied gene with a randomly generated new gene. This gene will be valid on
-//	 * the original graph, but may not be valid as part of the resulting chromosome (since it may no
-//	 * longer be valid at that point in the sequence of merges)
-//	 * @param gene the gene to replace with the random mutation
-//	 *
-//	 * Original documentation note: "This method can only be done from the original graph, not constantly
-//	 *             				     changing ones such as during eval"
-//	 */
-//	private void mutateGene(int[] gene) {
-//		int randomRoot = this.RANDOM.nextInt(this.GRAPH_SIZE);
-//		gene[0] = randomRoot;
-//		if (this.ORIGINAL_NEIGHBORHOODS.get(randomRoot).size() < 1) {
-//			this.ORIGINAL_NEIGHBORHOODS.get(randomRoot).addAll(this.ORIGINAL_GRAPH.bfs(randomRoot, this.DISTANCE_LIMIT));
-//		}
-//		int randomNeighbor = this.ORIGINAL_NEIGHBORHOODS.get(randomRoot).get(this.RANDOM.nextInt(this.ORIGINAL_NEIGHBORHOODS.get(randomRoot).size()));
-//		int randomOffset = Math.floorMod(randomNeighbor - randomRoot, this.GRAPH_SIZE);
-//		gene[1] = randomOffset;
-//	}
-
-//	/**
-//	 * Mutate the given chromosome by randomly selecting a gene to replace with a new random gene.
-//	 *
-//	 * @param chromosome the chromosome to mutate
-//	 */
-//	public void mutate(int[][] chromosome) {
-//		if (!VALID) {
-//			return;
-//		}
-//		int randomIndex = this.RANDOM.nextInt(chromosome.length);
-//		this.mutateGene(chromosome[randomIndex]);
-//	}
-
-//	/**
-//	 * Method to check if the specified gene (merge) appears more than once in the given chromosome
-//	 * (it is not possible / not helpful to do the same merge twice, so having a duplicate gene is an invalid solution)
-//	 * @param chromosome the chromosome to check
-//	 * @param gene the gene to search for
-//	 * @return True if the gene appears more than once in the given chromosome, False otherwise
-//	 */
-//	private boolean duplicateGene(int[][] chromosome, int[] gene) {
-//		boolean found = false;
-//		for (int i = 0; i < chromosome.length; i++) {
-//			if (chromosome[i][0] == gene[0] && chromosome[i][1] == gene[1]) {
-//				if(found){
-//					return true;
-//				} else {
-//					found = true;
-//				}
-//			}
-//		}
-//		return false;
-//	}
-//
-//	/**
-//	 * Evaluates a single gene within a chromosome by performing the merge specified by the gene.
-//	 * If the gene represents an invalid merge (a duplicate merge or a merge between two nodes in the same supernode),
-//	 * the gene will be replaced with a new gene representing a random valid merge (keeping the same root node
-//	 * if possible).
-//	 *
-//	 * @param graph the current state of the graph to evaluate the gene/merge on
-//	 * @param gene the gene to evaluate by applying the merge to the graph
-//	 */
-//	public void evaluateGene(LinkedGraph graph, int[][] chromosome, int[] gene) {
-//		int from = gene[0];
-//		int to = (gene[0] + gene[1]) % this.GRAPH_SIZE;
-//		int[] tempGene = new int[]{gene[0], gene[1]};
-//
-//		// if the gene is invalid, because it appears more than once in the chromosome
-//		// or merges two nodes already in the same cluster, replace it with a new gene
-//		if (duplicateGene(chromosome, tempGene) || graph.sameCluster(from, to)) {
-//
-//			List<Integer> possibleNeighbors = graph.bfs(from, this.DISTANCE_LIMIT);
-//			// iterate through all neighbours within the distance limit of the 'from' node
-//			// select the first one which represents a valid merge, if it exists
-//			for (Integer neighbor : possibleNeighbors) {
-//				to = neighbor;
-//				tempGene[0] = from;
-//				tempGene[1] = Math.floorMod(to - from, this.GRAPH_SIZE);
-//				if (!graph.sameCluster(from, to) && !duplicateGene(chromosome, tempGene)) {
-//					break;
-//				}
-//			}
-//			// if no valid merges were found within the neighbourhood of the 'from' node
-//			// randomly select a new 'from' node and corresponding 'to' node
-//			while (duplicateGene(chromosome, tempGene) || graph.sameCluster(from, to)) {
-//				from = this.RANDOM.nextInt(this.GRAPH_SIZE);
-//				possibleNeighbors = graph.bfs(from, this.DISTANCE_LIMIT);
-//				if (possibleNeighbors.size() < 1) {
-//					continue;
-//				}
-//				to = possibleNeighbors.get(this.RANDOM.nextInt(possibleNeighbors.size()));
-//
-//				tempGene[0] = from;
-//				tempGene[1] = Math.floorMod(to - from, this.GRAPH_SIZE);
-//			}
-//		}
-//		// update the gene
-//		gene[0] = from;
-//		gene[1] = Math.floorMod(to - from, this.GRAPH_SIZE);
-//		// apply the merge specified by the gene to the graph
-//		graph.merge(from, to);
-//	}
 
 	/**
 	 * Fitness function. Evaluates the number of fake links created as a result of the merge-sequence specified by the
@@ -633,6 +500,7 @@ public class GAImplementation {
 		this.MUTATION_RATE = DEFAULT_RATE;
 		this.ELITISM_RATE = DEFAULT_RATE;
 		this.RUN_SPAN = 1;
+		this.CHROMOSOME_TYPE = "BFS";
 	}
 
 	/**
@@ -793,6 +661,8 @@ public class GAImplementation {
 						this.GRAPH_SIZE = g.getSize();
 						this.ORIGINAL_GRAPH = g;
 						break;
+					case "type":
+						this.CHROMOSOME_TYPE = data[1].trim().toUpperCase();
 					default:
 						break;
 				}
