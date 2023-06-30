@@ -74,6 +74,7 @@ public class GAImplementation {
 
 	private Map<String, Integer> CACHED_CHROMOSOME_FITNESS;
 
+
 	/**
 	 * Builds GA based on configuration file at fileLocation
 	 *
@@ -374,7 +375,6 @@ public class GAImplementation {
 			}
 		}
 		return winner;
-		//this.RANDOM.nextInt(TOURNAMENT_SIZE)
 	}
 
 	/**
@@ -458,7 +458,6 @@ public class GAImplementation {
 			fitness.add(new WrappedNode(i, evaluatePrevious(i)));
 		}
 		for (int e = 0; e < this.ELITE_COUNT; e++) {
-			//System.out.println(fitness.size());
 			WrappedNode elite = fitness.remove();
 			newPop[e] = this.getChromosome(elite.index);
 		}

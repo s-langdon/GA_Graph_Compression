@@ -8,8 +8,8 @@ import java.util.Scanner;
 import java.io.IOException;
 
 // datastructures
-import java.util.List;
 // could probably replace all instances of arraylist with linked list
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.Queue;
 import java.util.PriorityQueue;
+import java.util.HashMap;
 
 /**
  * This object implements the Graph interface designed by Tyler. Additional
@@ -51,6 +52,9 @@ public class LinkedGraph implements Graph {
 	 */
 	private int MAX_SIZE;
 
+	// a HashMap to store the results of computing BFS
+	private HashMap<String, List<Integer>> ORIGINAL_NEIGHBOURHOODS;
+
 	/**
 	 * Private constructor that constructs the required data for an empty
 	 * LinkedGraph, such as the size, adjacency list, default nodes.
@@ -70,6 +74,8 @@ public class LinkedGraph implements Graph {
 			this.MATRIX.add(new ArrayList<Integer>());
 			this.ORIGINAL_MATRIX.add(new ArrayList<Integer>());
 		}
+		// init empty HashMap
+		ORIGINAL_NEIGHBOURHOODS = new HashMap<>();
 	}
 
 	/**
@@ -418,8 +424,19 @@ public class LinkedGraph implements Graph {
 	}
 
 	public List<Integer> bfs(int root, int depth) {
+
+		// if the graph has not changed size, save the neighbourhoods for given (root, depth) and pass them back
+		if (this.SIZE == this.MAX_SIZE) {
+			// check if the root,depth combo exists in the ORIGINAL_NEIGHBOURHOODS already
+			String key = String.valueOf(root) +","+String.valueOf(depth);
+			List<Integer> neighbours = ORIGINAL_NEIGHBOURHOODS.get(key);
+			if (neighbours != null) {
+				return neighbours;
+			}
+		}
+
+		// if the graph has changed or we haven't computed this value yet, compute it.
 		int rootValue = this.NODES[root].getId();
-		//System.out.println("Root: "+rootValue);
 		Set<Integer> explored = new HashSet<>();
 		Queue<WrappedNode> toExplore = new LinkedList<>();
 		// initialize root as what needs to be explored
@@ -433,24 +450,27 @@ public class LinkedGraph implements Graph {
 			// if we need are not at max depth, add the neighbours of this node to explore
 			if (atDistance < depth) {
 				List<Integer> neighbors = this.MATRIX.get(atIndex);
-				//System.out.println("Found "+neighbors.size()+" neighbors for "+atIndex+" current distance "+atDistance);
 
 				// explore neighboring nodes
 				for (int index : neighbors) {
 					int iValue = this.NODES[index].getId();
 					//if not previously visited, queue up the item
 					if (!explored.contains(iValue)) {
-						//System.out.println("Checking "+atIndex+"'s neighor "+iValue+" "+(atDistance+1)+" away");
 						toExplore.add(new WrappedNode(iValue, atDistance + 1));
 						explored.add(iValue);
 					}
 				}
 			}
-			//System.out.println("Done checking "+atIndex);
 		}
 		List<Integer> returnValue = new ArrayList<>(explored);
 		returnValue.remove(returnValue.indexOf(rootValue));
-		//System.out.println("retvalu"+returnValue);
+
+		// if the graph hasn't changed and we made it here, save the value before we return it!
+		if (this.SIZE == this.MAX_SIZE) {
+			String key = String.valueOf(root) +","+String.valueOf(depth);
+			ORIGINAL_NEIGHBOURHOODS.put(key, returnValue);
+		}
+
 		return returnValue;
 	}
 
