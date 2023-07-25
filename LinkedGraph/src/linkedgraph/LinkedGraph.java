@@ -4,21 +4,12 @@ import graph.Graph;
 
 // file input/output
 import java.io.File;
-import java.util.Scanner;
+import java.util.*;
 import java.io.IOException;
 
-// datastructures
+// data structures
 // could probably replace all instances of arraylist with linked list
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Queue;
-import java.util.PriorityQueue;
-import java.util.HashMap;
+
 
 /**
  * This object implements the Graph interface designed by Tyler. Additional
@@ -425,15 +416,15 @@ public class LinkedGraph implements Graph {
 
 	public List<Integer> bfs(int root, int depth) {
 
-		// if the graph has not changed size, save the neighbourhoods for given (root, depth) and pass them back
-		if (this.SIZE == this.MAX_SIZE) {
-			// check if the root,depth combo exists in the ORIGINAL_NEIGHBOURHOODS already
-			String key = String.valueOf(root) +","+String.valueOf(depth);
-			List<Integer> neighbours = ORIGINAL_NEIGHBOURHOODS.get(key);
-			if (neighbours != null) {
-				return neighbours;
-			}
-		}
+//		// if the graph has not changed size, save the neighbourhoods for given (root, depth) and pass them back
+//		if (this.SIZE == this.MAX_SIZE) {
+//			// check if the root,depth combo exists in the ORIGINAL_NEIGHBOURHOODS already
+//			String key = String.valueOf(root) +","+String.valueOf(depth);
+//			List<Integer> neighbours = ORIGINAL_NEIGHBOURHOODS.get(key);
+//			if (neighbours != null) {
+//				return neighbours;
+//			}
+//		}
 
 		// if the graph has changed or we haven't computed this value yet, compute it.
 		int rootValue = this.NODES[root].getId();
@@ -450,7 +441,6 @@ public class LinkedGraph implements Graph {
 			// if we need are not at max depth, add the neighbours of this node to explore
 			if (atDistance < depth) {
 				List<Integer> neighbors = this.MATRIX.get(atIndex);
-
 				// explore neighboring nodes
 				for (int index : neighbors) {
 					int iValue = this.NODES[index].getId();
@@ -465,11 +455,11 @@ public class LinkedGraph implements Graph {
 		List<Integer> returnValue = new ArrayList<>(explored);
 		returnValue.remove(returnValue.indexOf(rootValue));
 
-		// if the graph hasn't changed and we made it here, save the value before we return it!
-		if (this.SIZE == this.MAX_SIZE) {
-			String key = String.valueOf(root) +","+String.valueOf(depth);
-			ORIGINAL_NEIGHBOURHOODS.put(key, returnValue);
-		}
+//		// if the graph hasn't changed and we made it here, save the value before we return it!
+//		if (this.SIZE == this.MAX_SIZE) {
+//			String key = String.valueOf(root) +","+String.valueOf(depth);
+//			ORIGINAL_NEIGHBOURHOODS.put(key, returnValue);
+//		}
 
 		return returnValue;
 	}
@@ -512,4 +502,89 @@ public class LinkedGraph implements Graph {
 		// if unable to be found, return -1
 		return shortest == Integer.MAX_VALUE ? -1 : shortest;
 	}
+
+	// for the sake of consistency with accessing adjacency information, the following methods have been added as part
+	// of the LinkedGraph implementation. it may be worth considering putting them elsewhere?
+
+	/**
+	 * Randomly searches the neighbourhood surrounding root. Similar to BFS, only instead of adding all neighbours of
+	 * each node a random subset is selected for inclusion/further search in the neighbourhood.
+	 * @param root the root node of the search
+	 * @param depth the maximum number of edges away from the root to search
+	 * @param r the Random object to be used for the random inclusion
+	 * @return a list of integers representing a random selection of nodes within the depth number of edges of the root
+	 */
+	public List<Integer> randomAddBFS(int root, int depth, Random r){
+		// if the graph has changed or we haven't computed this value yet, compute it.
+		int rootValue = this.NODES[root].getId();
+		Set<Integer> explored = new HashSet<>();
+		Queue<WrappedNode> toExplore = new LinkedList<>();
+		// initialize root as what needs to be explored
+		explored.add(rootValue);
+		toExplore.add(new WrappedNode(rootValue, 0));
+		// explore while there are items to explore
+		while (!toExplore.isEmpty()) {
+			WrappedNode at = toExplore.remove();
+			int atIndex = this.NODES[at.index].getId();
+			int atDistance = at.distance;
+			// if we need are not at max depth, add the neighbours of this node to explore
+			if (atDistance < depth) {
+				List<Integer> neighbors = this.MATRIX.get(atIndex);
+				String bitMap = getBitMask(neighbors.size(), r);
+				if (bitMap.length() != neighbors.size()){
+					System.out.println("Mismatched bitmap size.");
+				}
+				// explore neighboring nodes
+				for (int i = 0; i < bitMap.length(); i++) {
+					if (bitMap.charAt(i) == '1') {
+						int iValue = this.NODES[neighbors.get(i)].getId();
+						if (!explored.contains(iValue)) {
+							toExplore.add(new WrappedNode(iValue, atDistance + 1));
+							explored.add(iValue);
+						}
+					}
+				}
+			}
+		}
+		List<Integer> returnValue = new ArrayList<>(explored);
+		returnValue.remove(returnValue.indexOf(rootValue));
+
+		return returnValue;
+	}
+
+	/**
+	 * Helper method for the RandomAdd method of neighbourhood selection. Creates a random binary string to determine
+	 * neighbour inclusion. This string is guaranteed to be non-zero / contain at least one '1'.
+	 * @param size the size (length) of bit mask required
+	 * @param r the Random object to use for number generation
+	 * @return a binary String of length 'size'
+	 */
+	private String getBitMask(int size, Random r){
+		String sNum = "";
+		int remaining = size;
+		while (sNum.length() < size) {
+			int portion = Math.min(32, remaining);
+			remaining -= 32;
+			int num = 0;
+			while (num < 1) {
+				int bound = (int) Math.pow(2, portion);
+				num = r.nextInt(bound);
+			}
+			String fmt = "%" + portion + "s";
+			sNum += String.format(fmt, Integer.toBinaryString(num)).replace(' ', '0');
+		}
+		return sNum;
+	}
+
+	// add a method to get adjacency info directly for methods which avoid BFS
+	public List<Integer> getAdjacentNodes(int node){
+//		// get adjacency info for the given node
+//		List<Integer> neighbours = this.MATRIX.get(this.NODES[node].getId());
+//		return new LinkedList<>(neighbours);
+		// return a reference to the actual adjacency info
+		// DO NOT TOUCH THIS
+		// does this feel very insecure? yes. are we just looking to see if avoiding copying will speed stuff up? yes.
+		return this.MATRIX.get(this.NODES[node].getId());
+	}
+
 }

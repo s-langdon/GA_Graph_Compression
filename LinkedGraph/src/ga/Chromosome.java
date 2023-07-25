@@ -12,7 +12,6 @@ public abstract class Chromosome {
     int[][] genes; // holds the root/offset pairs that define the merges
     int fitness; // fitness -- not strictly necessary/used at the moment, but nice for debugging etc
 
-
     // constructor
     protected Chromosome(Random RANDOM, int size, int maxDepth) {
         this.RANDOM = RANDOM;

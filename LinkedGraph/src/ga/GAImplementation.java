@@ -60,6 +60,7 @@ public class GAImplementation {
 	private boolean VALID;
 	private BufferedWriter OUTPUT;
 	private String CHROMOSOME_TYPE = "";
+	private String TEST_TYPE; // runtime (reset seed for all runs) or performance (set seed at beginning only)
 
 	private final String DEFAULT_OUTPUT = "";
 	private final float DEFAULT_RATE = -Float.MAX_VALUE;
@@ -119,23 +120,25 @@ public class GAImplementation {
 				System.out.println("Error creating write file: " + e.getMessage());
 			}
 			try {
+				// write the constant info on the first line
+				this.OUTPUT.write("Source: " + this.SOURCE_FILENAME
+						+ "; Type: " + this.CHROMOSOME_TYPE
+						+ "; Seed: " + this.SEED
+						+ "; Graph Size: " + this.GRAPH_SIZE
+						+ "; Population Size: " + this.POPULATION_SIZE
+						+ "; Compression Rate: " + String.format("%.5f%%", this.CHROMOSOME_SIZE / Double.valueOf(this.GRAPH_SIZE))
+						+ "; Chromosome Size: " + this.CHROMOSOME_SIZE
+						+ "; Elitism Rate: " + String.format("%.5f%%", this.ELITE_COUNT / Double.valueOf(this.GRAPH_SIZE))
+						+ "; Elite Size: " + this.ELITE_COUNT
+						+ "; Tournament Size: " + this.TOURNAMENT_SIZE
+						+ "; Mutation Rate: " + String.format("%.5f%%", this.MUTATION_RATE)
+						+ "; Crossover Rate: " + String.format("%.5f%%", this.CROSSOVER_RATE)
+						+ "; Maximum Distance: " + this.DISTANCE_LIMIT
+						+ "; Run Span: " + this.RUN_SPAN
+						+ "; Generation Span: " + this.GENERATION_SPAN);
+				this.OUTPUT.newLine();
 				// CSV Columns
-				this.OUTPUT.write("Source,"
-						+ "Type,"
-						+ "Seed,"
-						+ "Graph Size,"
-						+ "Population Size,"
-						+ "Compression Rate,"
-						+ "Chromosome Size,"
-						+ "Elitism Rate,"
-						+ "Elite Size,"
-						+ "Tournament Size,"
-						+ "Mutation Rate,"
-						+ "Crossover Rate,"
-						+ "Maximum Distance,"
-						+ "Run Span,"
-						+ "Run,"
-						+ "Generation Span,"
+				this.OUTPUT.write("Run,"
 						+ "Generation,"
 						+ "Time to Complete,"
 						+ "Global Best Fitness,"
@@ -168,6 +171,9 @@ public class GAImplementation {
 			this.POPULATION_FITNESS = new int[this.POPULATION_SIZE];
 			// Each run
 			for (int run = 1; run <= this.RUN_SPAN; run++) {
+				// If testing runtime performance, reset the seed at the beginning of each run.
+				// This way each run should be identical in workload as it considers the same series of nodes.
+				if (this.TEST_TYPE == "RUNTIME") this.RANDOM = new Random(this.SEED);
 				initPopulation();
 
 				// Grab initial population fitness
@@ -255,22 +261,7 @@ public class GAImplementation {
 					}
 					// Output the results
 					try {
-						this.OUTPUT.write(this.SOURCE_FILENAME + ","
-								+ this.CHROMOSOME_TYPE + ","
-								+ this.SEED + ","
-								+ this.GRAPH_SIZE + ","
-								+ this.POPULATION_SIZE + ","
-								+ String.format("%.5f%%", this.CHROMOSOME_SIZE / Double.valueOf(this.GRAPH_SIZE)) + ","
-								+ this.CHROMOSOME_SIZE + ","
-								+ String.format("%.5f%%", this.ELITE_COUNT / Double.valueOf(this.GRAPH_SIZE)) + ","
-								+ this.ELITE_COUNT + ","
-								+ this.TOURNAMENT_SIZE + ","
-								+ String.format("%.5f%%", this.MUTATION_RATE) + ","
-								+ String.format("%.5f%%", this.CROSSOVER_RATE) + ","
-								+ this.DISTANCE_LIMIT + ","
-								+ this.RUN_SPAN + ","
-								+ run + ","
-								+ this.GENERATION_SPAN + ","
+						this.OUTPUT.write(run + ","
 								+ gen + ","
 								+ (System.currentTimeMillis() - startTime) + ","
 								+ globalBestFitness + ","
@@ -474,6 +465,10 @@ public class GAImplementation {
 		switch (this.CHROMOSOME_TYPE) {
 			case "BFS":
 				return new BFSChromosome(this.RANDOM, this.CHROMOSOME_SIZE, this.DISTANCE_LIMIT);
+			case "RANDOMADD":
+				return new RandomChromosome(this.RANDOM, this.CHROMOSOME_SIZE, this.DISTANCE_LIMIT);
+			case "FIXED":
+				return new FixedChromosome(this.RANDOM, this.CHROMOSOME_SIZE, this.DISTANCE_LIMIT);
 			default:
 				return new BFSChromosome(this.RANDOM, this.CHROMOSOME_SIZE, this.DISTANCE_LIMIT);
 		}
@@ -500,6 +495,7 @@ public class GAImplementation {
 		this.ELITISM_RATE = DEFAULT_RATE;
 		this.RUN_SPAN = 1;
 		this.CHROMOSOME_TYPE = "BFS";
+		this.TEST_TYPE  = "PERFORMANCE"; // set seed once at the beginning, do not reset each run.
 	}
 
 	/**
@@ -662,6 +658,8 @@ public class GAImplementation {
 						break;
 					case "type":
 						this.CHROMOSOME_TYPE = data[1].trim().toUpperCase();
+					case "testType":
+						this.TEST_TYPE = data[1].trim().toUpperCase();
 					default:
 						break;
 				}
