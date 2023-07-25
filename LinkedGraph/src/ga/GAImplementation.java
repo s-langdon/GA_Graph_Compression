@@ -173,7 +173,7 @@ public class GAImplementation {
 			for (int run = 1; run <= this.RUN_SPAN; run++) {
 				// If testing runtime performance, reset the seed at the beginning of each run.
 				// This way each run should be identical in workload as it considers the same series of nodes.
-				if (this.TEST_TYPE == "RUNTIME") this.RANDOM = new Random(this.SEED);
+				if (this.TEST_TYPE.equals("RUNTIME")) this.RANDOM = new Random(this.SEED);
 				initPopulation();
 
 				// Grab initial population fitness
@@ -658,8 +658,10 @@ public class GAImplementation {
 						break;
 					case "type":
 						this.CHROMOSOME_TYPE = data[1].trim().toUpperCase();
+						break;
 					case "testType":
 						this.TEST_TYPE = data[1].trim().toUpperCase();
+						break;
 					default:
 						break;
 				}
