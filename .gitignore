@@ -2,3 +2,4 @@
 *.zip
 .idea/
 out/
+LinkedGraph/data/in/

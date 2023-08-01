@@ -532,12 +532,20 @@ public class LinkedGraph implements Graph {
 				List<Integer> neighbors = this.MATRIX.get(atIndex);
 				String bitMap = getBitMask(neighbors.size(), r);
 				if (bitMap.length() != neighbors.size()){
-					System.out.println("Mismatched bitmap size.");
+					System.err.println("Error in randomAddBFS: Mismatched bitmap size.");
 				}
 				// explore neighboring nodes
-				for (int i = 0; i < bitMap.length(); i++) {
+				for (int i = 0; i < neighbors.size(); i++) {
 					if (bitMap.charAt(i) == '1') {
 						int iValue = this.NODES[neighbors.get(i)].getId();
+						// if it's a self-loop, pick either the one before or the one after
+						if (iValue == rootValue) {
+							if (i-1 >= 0) {
+								iValue = this.NODES[neighbors.get(i-1)].getId();
+							} else if (i+1 < neighbors.size()) {
+								iValue = this.NODES[neighbors.get(i+1)].getId();
+							}
+						}
 						if (!explored.contains(iValue)) {
 							toExplore.add(new WrappedNode(iValue, atDistance + 1));
 							explored.add(iValue);
@@ -566,10 +574,8 @@ public class LinkedGraph implements Graph {
 			int portion = Math.min(32, remaining);
 			remaining -= 32;
 			int num = 0;
-			while (num < 1) {
-				int bound = (int) Math.pow(2, portion);
-				num = r.nextInt(bound);
-			}
+			int bound = (int) Math.pow(2, portion);
+			num = r.nextInt(bound - 1) + 1; //ensure that the random number is always at least 1
 			String fmt = "%" + portion + "s";
 			sNum += String.format(fmt, Integer.toBinaryString(num)).replace(' ', '0');
 		}
