@@ -5,16 +5,12 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.LinkedList;
-import java.util.Random;
+import java.util.*;
 
 import graph.*;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.PriorityQueue;
+
 import linkedgraph.*;
 
 
@@ -61,7 +57,7 @@ public class GAImplementation {
 	private BufferedWriter OUTPUT;
 	private String CHROMOSOME_TYPE = "";
 	private String TEST_TYPE; // runtime (reset seed for all runs) or performance (set seed at beginning only)
-
+	private boolean BFS_CACHE;
 	private final String DEFAULT_OUTPUT = "";
 	private final float DEFAULT_RATE = -Float.MAX_VALUE;
 	private final int DEFAULT_SIZE = Integer.MIN_VALUE;
@@ -75,6 +71,22 @@ public class GAImplementation {
 
 	private Map<String, Integer> CACHED_CHROMOSOME_FITNESS;
 
+	// FOR DEBUGGING / INVESTIGATION ONLY
+	private Map<String, Set<String>> TRANSFORMED_CHROMOSOMES;
+	private Map<String, String> TRANSFORM_MAP;
+
+	//cached fitnesses from valid chromosomes
+	private int cacheAccesses;
+	// number of times the same invalid chromosome is mapped to a valid one
+	private int transformMapUses;
+	// number of times a transformed chromosome is able to have fitness retrieved from the cache instead of collecting the fake links from the graph again
+	private int postTransformCacheAccesses;
+	// total number of evaluations
+	private int evaluations;
+
+	private boolean NOISY; // flag to enable/disable noisy console output
+
+	private boolean SAVE_TRANSFORM = false; //save the first transformation of invalid chromosomes for future reuse
 
 	/**
 	 * Builds GA based on configuration file at fileLocation
@@ -84,7 +96,8 @@ public class GAImplementation {
 	 * @param fileLocation filepath for the configuration file which specifies the parameters to be used
 	 *                       and the input data source
 	 */
-	public GAImplementation(long seed, String fileLocation) {
+	public GAImplementation(long seed, String fileLocation, boolean noisy) {
+		this.NOISY = noisy;
 		this.SEED = seed;
 		this.RANDOM = new Random(this.SEED);
 		if (!buildData(IN_DIRECTORY + fileLocation)) {
@@ -104,6 +117,10 @@ public class GAImplementation {
 		this.OUTPUT_FILENAME += "_gen" + this.GENERATION_SPAN;
 		// chromosome type
 		this.OUTPUT_FILENAME += "_type" + this.CHROMOSOME_TYPE;
+		// save_transform
+		this.OUTPUT_FILENAME += "_st-" + this.SAVE_TRANSFORM;
+		// bfs_cache
+		this.OUTPUT_FILENAME += "bfsc-" +this.BFS_CACHE;
 		// seed suffix
 		this.OUTPUT_FILENAME += "_" + this.SEED + ".csv";
 	}
@@ -135,7 +152,9 @@ public class GAImplementation {
 						+ "; Crossover Rate: " + String.format("%.5f%%", this.CROSSOVER_RATE)
 						+ "; Maximum Distance: " + this.DISTANCE_LIMIT
 						+ "; Run Span: " + this.RUN_SPAN
-						+ "; Generation Span: " + this.GENERATION_SPAN);
+						+ "; Generation Span: " + this.GENERATION_SPAN
+						+ "; BFS Caching: " + this.BFS_CACHE
+						+ "; Save Transformations: " + this.SAVE_TRANSFORM);
 				this.OUTPUT.newLine();
 				// CSV Columns
 				this.OUTPUT.write("Run,"
@@ -153,6 +172,11 @@ public class GAImplementation {
 						+ "Global Best Chromosome,"
 						+ "Run Best Chromosome,"
 						+ "Generation Best Chromosome,"
+						+ "Fitness Cache Accesses,"
+						+ "Post-Transform Fitness Cache Accesses,"
+						+ "Transform Map Uses,"
+						+ "Evaluations,"
+						+ "Fitness Cache Size,"
 				);
 				this.OUTPUT.newLine();
 				this.OUTPUT.flush();
@@ -161,6 +185,12 @@ public class GAImplementation {
 			}
 
 			this.CACHED_CHROMOSOME_FITNESS = new HashMap<>();
+
+			this.TRANSFORMED_CHROMOSOMES = new HashMap<>();
+			this.TRANSFORM_MAP = new HashMap<>();
+
+			int totalCacheAccesses = 0;
+			int totalEvaluations = 0;
 
 			// initialize global settings
 			int globalWorstFitness = Integer.MIN_VALUE;
@@ -195,7 +225,14 @@ public class GAImplementation {
 					int genWorstFitness = Integer.MIN_VALUE;
 					Chromosome genWorst = createChromosome();
 					long genSum = 0;
-					System.out.println("Thread " + Thread.currentThread().getId() + " Run " + run + " Generation " + gen);
+
+					//caching impact investigation
+					this.cacheAccesses = 0;
+					this.evaluations = 0;
+					this.postTransformCacheAccesses = 0;
+					this.transformMapUses = 0;
+
+					if (this.NOISY) System.out.println("Thread " + Thread.currentThread().getId() + " Run " + run + " Generation " + gen);
 
 					// Elitism
 					Chromosome[] generation = this.getElitePopulation();
@@ -276,20 +313,53 @@ public class GAImplementation {
 								+ "\"" + globalBest.toString() + "\","
 								+ "\"" + runBest.toString() + "\","
 								+ "\"" + genBest.toString() + "\","
+								+ this.cacheAccesses + ","
+								+ this.postTransformCacheAccesses + ","
+								+ this.transformMapUses + ","
+								+ this.evaluations + ","
+								+ this.CACHED_CHROMOSOME_FITNESS.size() + ","
 						);
 						this.OUTPUT.newLine();
 						this.OUTPUT.flush();
 					} catch (Exception e) {
 						System.out.println("Unable to write to file: " + e.getMessage());
 					}
-					System.out.println("Global Sum: " + globalSum);
-					System.out.println("Global total: " + (this.POPULATION_SIZE * ((this.GENERATION_SPAN * (run - 1)) + gen)));
-					System.out.println("Run Sum: " + runSum);
-					System.out.println("Run total: " + (this.POPULATION_SIZE * gen));
-					System.out.println("Generation Sum: " + genSum);
-					System.out.println("Generation total: " + this.POPULATION_SIZE);
+					if (this.NOISY) {
+						System.out.println("Global Sum: " + globalSum);
+						System.out.println("Global total: " + (this.POPULATION_SIZE * ((this.GENERATION_SPAN * (run - 1)) + gen)));
+						System.out.println("Run Sum: " + runSum);
+						System.out.println("Run total: " + (this.POPULATION_SIZE * gen));
+						System.out.println("Generation Sum: " + genSum);
+						System.out.println("Generation total: " + this.POPULATION_SIZE);
+					}
+					totalCacheAccesses += this.cacheAccesses;
+					totalEvaluations += this.evaluations;
 				}
+				// DEBUGGING/ADDITIONAL STATS
+				System.out.println("Run " + run);
+				System.out.println("Overall size of chromosome fitness cache: " + this.CACHED_CHROMOSOME_FITNESS.size());
+				System.out.println("Overall cache accesses: " + totalCacheAccesses);
+				System.out.println("Overall evaluations: " + totalEvaluations);
 			}
+			
+			//DEBUGGING/INVESTIGATION ONLY
+			int numTransformed = this.TRANSFORMED_CHROMOSOMES.size();
+			int totalResults = 0;
+			int numMoreThanOne = 0;
+			int maxVariants = 0;
+			for (Map.Entry<String, Set<String>> entry : this.TRANSFORMED_CHROMOSOMES.entrySet()) {
+				String key = entry.getKey();
+				Set transformedValues = entry.getValue();
+				int variations = transformedValues.size();
+				totalResults += variations;
+				if (variations > 1) numMoreThanOne ++;
+				if (variations > maxVariants) maxVariants = variations;
+			}
+			System.out.println(numTransformed + " chromosomes transformed.");
+			System.out.println(totalResults + " total resulting chromosomes.");
+			System.out.println(numMoreThanOne + "/" + numTransformed + " had more than one resulting transformation.");
+			System.out.println((double)totalResults / (double) numTransformed + " average different results per transformed chromosome.");
+			System.out.println("Maximum number of different variations from same starting chromosome: " + maxVariants);
 
 			try {
 				this.OUTPUT.close();
@@ -297,7 +367,6 @@ public class GAImplementation {
 				System.out.println("Unable to close file: " + e.getMessage());
 			}
 		}
-
 	}
 
 	/**
@@ -401,25 +470,60 @@ public class GAImplementation {
 	 * @return The fitness of the chromosome
 	 */
 	public int evaluate(Chromosome chromosome) {
+		this.evaluations++;
 		String chromosomeString = chromosome.toString();
 		if (this.CACHED_CHROMOSOME_FITNESS.containsKey(chromosomeString)) {
+			this.cacheAccesses++;
 			return this.CACHED_CHROMOSOME_FITNESS.get(chromosomeString);
 		}
 
+		// check to see if it's an invalid chromosome that has been transformed before
+		if (this.SAVE_TRANSFORM && this.TRANSFORM_MAP.containsKey(chromosomeString)) {
+			String c = this.TRANSFORM_MAP.get(chromosomeString);
+			if(this.CACHED_CHROMOSOME_FITNESS.containsKey(c)) {
+				this.transformMapUses++;
+				return this.CACHED_CHROMOSOME_FITNESS.get(c);
+			}
+		}
+
+		// if we don't already have the fitness calculation, begin the process for calculation
 		LinkedGraph current = (LinkedGraph) this.ORIGINAL_GRAPH.deepCopy();
 		// iterate through each gene, applying the changes to the graph
 		for (int i = 0; i < this.CHROMOSOME_SIZE; i++) {
 			chromosome.validateGene(i, current);
 			chromosome.applyGene(i, current);
 		}
+		// re-build the string representing the chromosome, may have been altered
+		// during the evaluation process to remove invalid merges
+		// check if the validated gene fitness has already been calculated
+		String currentChromosomeString = chromosome.toString();
+
+		// If not saving the same transformation, measure the number of new variants
+		if (!currentChromosomeString.equals(chromosomeString)) {
+			if(!this.SAVE_TRANSFORM) { // DEBUGGING / MEASURING
+				// if it's already in there, add the currentChromosome to the set of transformations
+				if (this.TRANSFORMED_CHROMOSOMES.containsKey(chromosomeString)) {
+					this.TRANSFORMED_CHROMOSOMES.get(chromosomeString).add(currentChromosomeString);
+				} else { //add it
+					Set transformations = new HashSet<String>();
+					transformations.add(currentChromosomeString);
+					this.TRANSFORMED_CHROMOSOMES.put(chromosomeString, transformations);
+				}
+			} else { // this should only ever happen once
+				this.TRANSFORM_MAP.put(chromosomeString, currentChromosomeString);
+			}
+		}
+
+		// check if we have the fitness for this new chromosome already, if so, return that
+		if (this.CACHED_CHROMOSOME_FITNESS.containsKey(currentChromosomeString)) {
+			this.postTransformCacheAccesses++;
+			return this.CACHED_CHROMOSOME_FITNESS.get(currentChromosomeString);
+		}
 
 		// determine the number of fake links introduced into the graph as a result
 		int fitness = current.totalFakeLinks();
-		chromosome.fitness = fitness;
 
-		// re-build the string representing the chromosome, may have been altered
-		// during the evaluation process to remove invalid merges
-		String currentChromosomeString = chromosome.toString();
+		// put the new fitness in the cache
 		this.CACHED_CHROMOSOME_FITNESS.put(currentChromosomeString, fitness);
 
 		return fitness;
@@ -469,6 +573,8 @@ public class GAImplementation {
 				return new RandomChromosome(this.RANDOM, this.CHROMOSOME_SIZE, this.DISTANCE_LIMIT);
 			case "FIXED":
 				return new FixedChromosome(this.RANDOM, this.CHROMOSOME_SIZE, this.DISTANCE_LIMIT);
+			case "UNRESTRICTED":
+				return new UnrestrictedChromosome(this.RANDOM, this.CHROMOSOME_SIZE, this.DISTANCE_LIMIT);
 			default:
 				return new BFSChromosome(this.RANDOM, this.CHROMOSOME_SIZE, this.DISTANCE_LIMIT);
 		}
@@ -661,6 +767,15 @@ public class GAImplementation {
 						break;
 					case "testType":
 						this.TEST_TYPE = data[1].trim().toUpperCase();
+						break;
+					case "cache":
+						if (data[1].trim().toUpperCase().equals("TRUE")) {
+							// this is terrible, but it will work
+							((LinkedGraph) this.ORIGINAL_GRAPH).setCache(true);
+							this.BFS_CACHE = true;
+						} else {
+							this.BFS_CACHE = false;
+						}
 						break;
 					default:
 						break;

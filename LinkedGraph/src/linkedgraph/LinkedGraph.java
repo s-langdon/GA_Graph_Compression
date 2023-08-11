@@ -43,6 +43,8 @@ public class LinkedGraph implements Graph {
 	 */
 	private int MAX_SIZE;
 
+	private boolean CACHE; // flag to cache BFS results
+
 	// a HashMap to store the results of computing BFS
 	private HashMap<String, List<Integer>> ORIGINAL_NEIGHBOURHOODS;
 
@@ -65,8 +67,13 @@ public class LinkedGraph implements Graph {
 			this.MATRIX.add(new ArrayList<Integer>());
 			this.ORIGINAL_MATRIX.add(new ArrayList<Integer>());
 		}
+		this.CACHE = false;
 		// init empty HashMap
 		ORIGINAL_NEIGHBOURHOODS = new HashMap<>();
+	}
+
+	public void setCache(boolean cache){
+		this.CACHE = cache;
 	}
 
 	/**
@@ -416,15 +423,15 @@ public class LinkedGraph implements Graph {
 
 	public List<Integer> bfs(int root, int depth) {
 
-//		// if the graph has not changed size, save the neighbourhoods for given (root, depth) and pass them back
-//		if (this.SIZE == this.MAX_SIZE) {
-//			// check if the root,depth combo exists in the ORIGINAL_NEIGHBOURHOODS already
-//			String key = String.valueOf(root) +","+String.valueOf(depth);
-//			List<Integer> neighbours = ORIGINAL_NEIGHBOURHOODS.get(key);
-//			if (neighbours != null) {
-//				return neighbours;
-//			}
-//		}
+		// if the graph has not changed size, save the neighbourhoods for given (root, depth) and pass them back
+		if (this.CACHE && this.SIZE == this.MAX_SIZE) {
+			// check if the root,depth combo exists in the ORIGINAL_NEIGHBOURHOODS already
+			String key = String.valueOf(root) +","+String.valueOf(depth);
+			List<Integer> neighbours = ORIGINAL_NEIGHBOURHOODS.get(key);
+			if (neighbours != null) {
+				return neighbours;
+			}
+		}
 
 		// if the graph has changed or we haven't computed this value yet, compute it.
 		int rootValue = this.NODES[root].getId();
@@ -455,11 +462,11 @@ public class LinkedGraph implements Graph {
 		List<Integer> returnValue = new ArrayList<>(explored);
 		returnValue.remove(returnValue.indexOf(rootValue));
 
-//		// if the graph hasn't changed and we made it here, save the value before we return it!
-//		if (this.SIZE == this.MAX_SIZE) {
-//			String key = String.valueOf(root) +","+String.valueOf(depth);
-//			ORIGINAL_NEIGHBOURHOODS.put(key, returnValue);
-//		}
+		// if the graph hasn't changed and we made it here, save the value before we return it!
+		if (this.CACHE && this.SIZE == this.MAX_SIZE) {
+			String key = String.valueOf(root) +","+String.valueOf(depth);
+			ORIGINAL_NEIGHBOURHOODS.put(key, returnValue);
+		}
 
 		return returnValue;
 	}

@@ -10,7 +10,6 @@ public abstract class Chromosome {
     int maxDepth; // defines how many edges away something can be to be a valid merge candidate -- defines "local"
     int size; // size of the chromosome -- number of merges to compress the graph
     int[][] genes; // holds the root/offset pairs that define the merges
-    int fitness; // fitness -- not strictly necessary/used at the moment, but nice for debugging etc
 
     // constructor
     protected Chromosome(Random RANDOM, int size, int maxDepth) {

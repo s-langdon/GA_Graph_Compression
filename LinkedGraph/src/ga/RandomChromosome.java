@@ -15,8 +15,7 @@ public class RandomChromosome extends Chromosome {
 
     @Override
     public Chromosome copy() {
-        Chromosome copy = new BFSChromosome(this.RANDOM, this.size, this.maxDepth);
-        copy.fitness = this.fitness;
+        Chromosome copy = new RandomChromosome(this.RANDOM, this.size, this.maxDepth);
         for (int i = 0; i < this.size; i++) {
             for (int j = 0; j < this.genes[i].length; j++) {
                 copy.genes[i][j] = this.genes[i][j];
