@@ -777,6 +777,12 @@ public class GAImplementation {
 							this.BFS_CACHE = false;
 						}
 						break;
+					case "saveTransform":
+						if (data[1].trim().toUpperCase().equals("TRUE")) {
+							this.SAVE_TRANSFORM = true;
+						} else {
+							this.SAVE_TRANSFORM = false;
+						}
 					default:
 						break;
 				}
