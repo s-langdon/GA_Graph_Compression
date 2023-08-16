@@ -26,12 +26,17 @@ public class RandomChromosome extends Chromosome {
 
     @Override
     public void mutateGene(int index, LinkedGraph graph) {
-        // select a random starting node
-        int randomRoot = this.RANDOM.nextInt(graph.getSize());
-        // set that as the root of the selected gene
-        this.genes[index][0] = randomRoot;
-        // get the neighbours of that root within the specified distance
-        List<Integer> neighbours = graph.randomAddBFS(randomRoot, this.maxDepth, this.RANDOM);
+        List<Integer> neighbours;
+        int randomRoot;
+        // for graphs with nodes that have degree = 0, select a different root node (in order to be able to find a neighbour)
+        do {
+            // select a random starting node
+            randomRoot = this.RANDOM.nextInt(graph.getSize());
+            // set that as the root of the selected gene
+            this.genes[index][0] = randomRoot;
+            // get the neighbours of that root within the specified distance
+            neighbours = graph.randomAddBFS(randomRoot, this.maxDepth, this.RANDOM);
+        } while(neighbours.size() == 0);
         // select a random neighbour from the list
         int randomNeighbor = neighbours.get(this.RANDOM.nextInt(neighbours.size()));
         // calculate the offset value
