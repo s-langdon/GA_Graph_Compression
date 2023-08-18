@@ -48,6 +48,9 @@ public class LinkedGraph implements Graph {
 	// a HashMap to store the results of computing BFS
 	private HashMap<String, List<Integer>> ORIGINAL_NEIGHBOURHOODS;
 
+	// int array to store the original degree for every node in the original graph
+	private int[] ORIGINAL_DEGREE;
+
 	/**
 	 * Private constructor that constructs the required data for an empty
 	 * LinkedGraph, such as the size, adjacency list, default nodes.
@@ -70,6 +73,8 @@ public class LinkedGraph implements Graph {
 		this.CACHE = false;
 		// init empty HashMap
 		ORIGINAL_NEIGHBOURHOODS = new HashMap<>();
+		// init empty degree array
+		ORIGINAL_DEGREE = new int[this.NODES.length];
 	}
 
 	public void setCache(boolean cache){
@@ -122,6 +127,7 @@ public class LinkedGraph implements Graph {
 		for (int i = 0; i < other.MAX_SIZE; i++) {
 			other.MATRIX.set(i, new ArrayList<Integer>(m.get(i)));
 			other.ORIGINAL_MATRIX.set(i, new ArrayList<Integer>(m.get(i)));
+			other.ORIGINAL_DEGREE[i] = other.ORIGINAL_MATRIX.get(i).size();
 		}
 		return other;
 	}
@@ -158,6 +164,10 @@ public class LinkedGraph implements Graph {
 			int from = s.nextInt();
 			int to = s.nextInt();
 			other.addEdge(from, to);
+		}
+		//populate the degree array!
+		for (int i = 0; i < other.MAX_SIZE; i++) {
+			other.ORIGINAL_DEGREE[i] = other.ORIGINAL_MATRIX.get(i).size();
 		}
 		return other;
 	}
@@ -598,6 +608,26 @@ public class LinkedGraph implements Graph {
 		// DO NOT TOUCH THIS
 		// does this feel very insecure? yes. are we just looking to see if avoiding copying will speed stuff up? yes.
 		return this.MATRIX.get(this.NODES[node].getId());
+	}
+
+	/**
+	 * Returns the degree of the node in the original, uncompressed graph
+	 * @param node
+	 * @return
+	 */
+	public int getOriginalDegree(int node){
+		return this.ORIGINAL_DEGREE[node];
+	}
+
+	/**
+	 * Return the current degree of the node (or supernode) in the graph.
+	 * Note: this method does compute the degree every time it is called.
+	 * @param node
+	 * @return
+	 */
+	public int getCurrentDegree(int node){
+		int nodeID = this.NODES[node].getId();
+		return this.MATRIX.get(nodeID).size();
 	}
 
 }

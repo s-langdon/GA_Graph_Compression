@@ -58,6 +58,7 @@ public class GAImplementation {
 	private String CHROMOSOME_TYPE = "";
 	private String TEST_TYPE; // runtime (reset seed for all runs) or performance (set seed at beginning only)
 	private boolean BFS_CACHE;
+	private double DEG_SELECT_RATE;
 	private final String DEFAULT_OUTPUT = "";
 	private final float DEFAULT_RATE = -Float.MAX_VALUE;
 	private final int DEFAULT_SIZE = Integer.MIN_VALUE;
@@ -120,7 +121,10 @@ public class GAImplementation {
 		// save_transform
 		this.OUTPUT_FILENAME += "_st-" + this.SAVE_TRANSFORM;
 		// bfs_cache
-		this.OUTPUT_FILENAME += "bfsc-" +this.BFS_CACHE;
+		this.OUTPUT_FILENAME += "_bfsc-" +this.BFS_CACHE;
+		if (this.CHROMOSOME_TYPE.equals("DEGREE") || this.CHROMOSOME_TYPE.equals("DEGREE2")) {
+			this.OUTPUT_FILENAME += "_degr" + this.DEG_SELECT_RATE;
+		}
 		// seed suffix
 		this.OUTPUT_FILENAME += "_" + this.SEED + ".csv";
 	}
@@ -154,7 +158,8 @@ public class GAImplementation {
 						+ "; Run Span: " + this.RUN_SPAN
 						+ "; Generation Span: " + this.GENERATION_SPAN
 						+ "; BFS Caching: " + this.BFS_CACHE
-						+ "; Save Transformations: " + this.SAVE_TRANSFORM);
+						+ "; Save Transformations: " + this.SAVE_TRANSFORM
+						+ "; Degree Select Rate: " + this.DEG_SELECT_RATE);
 				this.OUTPUT.newLine();
 				// CSV Columns
 				this.OUTPUT.write("Run,"
@@ -575,6 +580,10 @@ public class GAImplementation {
 				return new FixedChromosome(this.RANDOM, this.CHROMOSOME_SIZE, this.DISTANCE_LIMIT);
 			case "UNRESTRICTED":
 				return new UnrestrictedChromosome(this.RANDOM, this.CHROMOSOME_SIZE, this.DISTANCE_LIMIT);
+			case "DEGREE":
+				return new DegreeChromosome(this.RANDOM, this.CHROMOSOME_SIZE, this.DISTANCE_LIMIT, this.DEG_SELECT_RATE);
+			case "DEGREE2":
+				return new Degree2Chromosome(this.RANDOM, this.CHROMOSOME_SIZE, this.DISTANCE_LIMIT, this.DEG_SELECT_RATE);
 			default:
 				return new BFSChromosome(this.RANDOM, this.CHROMOSOME_SIZE, this.DISTANCE_LIMIT);
 		}
@@ -602,6 +611,7 @@ public class GAImplementation {
 		this.RUN_SPAN = 1;
 		this.CHROMOSOME_TYPE = "BFS";
 		this.TEST_TYPE  = "PERFORMANCE"; // set seed once at the beginning, do not reset each run.
+		this.DEG_SELECT_RATE = 1.0; //always choose the neighbour with min degree
 	}
 
 	/**
@@ -783,6 +793,10 @@ public class GAImplementation {
 						} else {
 							this.SAVE_TRANSFORM = false;
 						}
+						break;
+					case "degreeSelectRate":
+						this.DEG_SELECT_RATE = Float.parseFloat(data[1].trim());
+						break;
 					default:
 						break;
 				}
